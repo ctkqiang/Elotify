@@ -1,0 +1,85 @@
+{
+  "family": "gin-admin-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::637810847194:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::637810847194:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "mongodb",
+      "image": "mongo:7.0",
+      "essential": true,
+      "memory": 512,
+      "portMappings": [
+        {
+          "containerPort": 27017,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "MONGO_INITDB_ROOT_USERNAME",
+          "value": "admin"
+        },
+        {
+          "name": "MONGO_INITDB_ROOT_PASSWORD",
+          "value": "password123"
+        },
+        {
+          "name": "MONGO_INITDB_DATABASE",
+          "value": "admin_db"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gin-admin-api",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "mongodb"
+        }
+      }
+    },
+    {
+      "name": "gin-api",
+      "image": "637810847194.dkr.ecr.ap-southeast-1.amazonaws.com/gin-admin-api:latest",
+      "essential": true,
+      "memory": 512,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "8080"
+        },
+        {
+          "name": "GIN_MODE",
+          "value": "release"
+        },
+        {
+          "name": "MONGODB_URI",
+          "value": "mongodb://admin:password123@localhost:27017/admin_db?authSource=admin"
+        }
+      ],
+      "dependsOn": [
+        {
+          "containerName": "mongodb",
+          "condition": "START"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gin-admin-api",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "gin-api"
+        }
+      }
+    }
+  ]
+}
