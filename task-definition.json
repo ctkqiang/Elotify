@@ -30,68 +30,23 @@
         {
           "name": "MONGO_INITDB_DATABASE",
           "value": "value_farm_notification"
-        },
-        {
-          "name": "MODE",
-          "value": "release"
-        },
-        {
-          "name": "MONGODB_USER",
-          "value": "admin"
-        },
-        {
-          "name": "MONGODB_PASSWORD",
-          "value": "vf1300177"
-        },
-        {
-          "name": "MONGODB_DATABASE",
-          "value": "value_farm_notification"
-        },
-        {
-          "name": "MONGODB_HOST",
-          "value": "localhost"
-        },
-        {
-          "name": "MONGODB_PORT",
-          "value": "27017"
-        },
-        {
-          "name": "ONESIGNAL_APP_ID",
-          "value": "85d94c8e-8aed-4d7f-901a-6d1793ce532e"
-        },
-        {
-          "name": "ONESIGNAL_REST_API_KEY",
-          "value": "os_v2_app_qxmuzduk5vgx7ea2nulzhtstf3tgr6qtl4dumr454e5wqwfgr5ns4mku5cixvacdul3j2ylt4w6tjasx76i2qbimu324uvbuc4kocri"
-        },
-        {
-          "name": "MYSQL_USER",
-          "value": "gp_cheng"
-        },
-        {
-          "name": "MYSQL_PASSWORD",
-          "value": "7K$ZKd3o8i"
-        },
-        {
-          "name": "MYSQL_HOST",
-          "value": "valuefarm.com"
-        },
-        {
-          "name": "MYSQL_PORT",
-          "value": "3306"
-        },
-        {
-          "name": "MYSQL_DATABASE",
-          "value": "gpecomm"
-        },
-        {
-          "name": "JWE_KEY_AES_256",
-          "value": "vAluEfArmPriceFeEd"
-        },
-        {
-          "name": "ENCRYPT",
-          "value": "false"
         }
       ],
+      "command": [
+        "mongod",
+        "--auth",
+        "--bind_ip_all"
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "mongosh --username admin --password vf1300177 --authenticationDatabase admin --eval 'db.runCommand(\"ping\")' --quiet || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 90
+      },
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -119,7 +74,7 @@
         },
         {
           "name": "MONGODB_URI",
-          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin"
+          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin&authMechanism=SCRAM-SHA-256"
         },
         {
           "name": "MODE",
@@ -185,7 +140,7 @@
       "dependsOn": [
         {
           "containerName": "mongodb",
-          "condition": "START"
+          "condition": "HEALTHY"
         }
       ],
       "logConfiguration": {
