@@ -6,9 +6,9 @@ on:
 
 env:
     AWS_REGION: ap-southeast-1
-    ECR_REPOSITORY: gin-admin-api
+    ECR_REPOSITORY: pushservice # ← Changed from gin-admin-api
     ECS_CLUSTER: valuefarm-cluster
-    ECS_SERVICE: gin-admin-service
+    ECS_SERVICE: pushservice-service # ← Changed service name
     ECS_TASK_DEFINITION: task-definition.json
 
 jobs:
@@ -31,13 +31,13 @@ jobs:
               id: login-ecr
               uses: aws-actions/amazon-ecr-login@v2
 
-            - name: Build, tag, and push Gin API image to Amazon ECR
+            - name: Build, tag, and push image to Amazon ECR
               id: build-image
               env:
                   ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
                   IMAGE_TAG: ${{ github.sha }}
               run: |
-                  # Build Docker image for Gin API
+                  # Build Docker image
                   docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
                   docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
@@ -52,7 +52,7 @@ jobs:
               uses: aws-actions/amazon-ecs-render-task-definition@v1
               with:
                   task-definition: ${{ env.ECS_TASK_DEFINITION }}
-                  container-name: gin-api
+                  container-name: pushservice-app # ← Changed container name
                   image: ${{ steps.build-image.outputs.image }}
 
             - name: Deploy Amazon ECS task definition
@@ -62,10 +62,3 @@ jobs:
                   service: ${{ env.ECS_SERVICE }}
                   cluster: ${{ env.ECS_CLUSTER }}
                   wait-for-service-stability: true
-
-            - name: Deployment Summary
-              run: |
-                  echo "🎉 Deployment completed successfully!"
-                  echo "📦 Image: ${{ steps.build-image.outputs.image }}"
-                  echo "🏗️ Cluster: ${{ env.ECS_CLUSTER }}"
-                  echo "🚀 Service: ${{ env.ECS_SERVICE }}"

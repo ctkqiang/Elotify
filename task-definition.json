@@ -1,5 +1,5 @@
 {
-  "family": "gin-admin-api",
+  "family": "pushservice",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
@@ -29,21 +29,21 @@
         },
         {
           "name": "MONGO_INITDB_DATABASE",
-          "value": "admin_db"
+          "value": "pushservice_db"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/gin-admin-api",
+          "awslogs-group": "/ecs/pushservice",
           "awslogs-region": "ap-southeast-1",
           "awslogs-stream-prefix": "mongodb"
         }
       }
     },
     {
-      "name": "gin-api",
-      "image": "637810847194.dkr.ecr.ap-southeast-1.amazonaws.com/gin-admin-api:latest",
+      "name": "pushservice-app",
+      "image": "637810847194.dkr.ecr.ap-southeast-1.amazonaws.com/pushservice:latest",
       "essential": true,
       "memory": 512,
       "portMappings": [
@@ -58,12 +58,8 @@
           "value": "8080"
         },
         {
-          "name": "GIN_MODE",
-          "value": "release"
-        },
-        {
           "name": "MONGODB_URI",
-          "value": "mongodb://admin:password123@localhost:27017/admin_db?authSource=admin"
+          "value": "mongodb://admin:password123@localhost:27017/pushservice_db?authSource=admin"
         }
       ],
       "dependsOn": [
@@ -75,9 +71,9 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/gin-admin-api",
+          "awslogs-group": "/ecs/pushservice",
           "awslogs-region": "ap-southeast-1",
-          "awslogs-stream-prefix": "gin-api"
+          "awslogs-stream-prefix": "pushservice-app"
         }
       }
     }
