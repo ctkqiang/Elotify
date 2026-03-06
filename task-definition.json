@@ -25,11 +25,11 @@
         },
         {
           "name": "MONGO_INITDB_ROOT_PASSWORD",
-          "value": "password123"
+          "value": "vf1300177"
         },
         {
           "name": "MONGO_INITDB_DATABASE",
-          "value": "pushservice_db"
+          "value": "value_farm_notification"
         }
       ],
       "logConfiguration": {
@@ -59,7 +59,7 @@
         },
         {
           "name": "MONGODB_URI",
-          "value": "mongodb://admin:password123@localhost:27017/pushservice_db?authSource=admin"
+          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin"
         }
       ],
       "dependsOn": [
