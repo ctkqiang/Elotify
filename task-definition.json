@@ -2,8 +2,8 @@
   "family": "pushservice",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
+  "cpu": "1024",
+  "memory": "2048",
   "executionRoleArn": "arn:aws:iam::637810847194:role/ecsTaskExecutionRole",
   "taskRoleArn": "arn:aws:iam::637810847194:role/ecsTaskRole",
   "containerDefinitions": [
@@ -11,7 +11,7 @@
       "name": "mongodb",
       "image": "mongo:7.0",
       "essential": true,
-      "memory": 512,
+      "memory": 1024,
       "portMappings": [
         {
           "containerPort": 27017,
@@ -35,17 +35,18 @@
       "command": [
         "mongod",
         "--auth",
-        "--bind_ip_all"
+        "--bind_ip_all",
+        "--wiredTigerCacheSizeGB", "0.5"
       ],
       "healthCheck": {
         "command": [
           "CMD-SHELL",
           "mongosh --username admin --password vf1300177 --authenticationDatabase admin --eval 'db.runCommand(\"ping\")' --quiet || exit 1"
         ],
-        "interval": 30,
-        "timeout": 10,
-        "retries": 5,
-        "startPeriod": 90
+        "interval": 60,
+        "timeout": 30,
+        "retries": 3,
+        "startPeriod": 120
       },
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -60,7 +61,7 @@
       "name": "pushservice-app",
       "image": "637810847194.dkr.ecr.ap-southeast-1.amazonaws.com/pushservice:latest",
       "essential": true,
-      "memory": 512,
+      "memory": 1024,
       "portMappings": [
         {
           "containerPort": 8080,
@@ -74,7 +75,7 @@
         },
         {
           "name": "MONGODB_URI",
-          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin&authMechanism=SCRAM-SHA-256"
+          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin&authMechanism=SCRAM-SHA-256&retryWrites=true&w=majority&maxPoolSize=10&serverSelectionTimeoutMS=30000&connectTimeoutMS=30000"
         },
         {
           "name": "MODE",
