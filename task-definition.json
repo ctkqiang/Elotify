@@ -64,14 +64,14 @@
       "memory": 1024,
       "portMappings": [
         {
-          "containerPort": 8080,
+          "containerPort": 80,
           "protocol": "tcp"
         }
       ],
       "environment": [
         {
           "name": "PORT",
-          "value": "8080"
+          "value": "80"
         },
         {
           "name": "MONGODB_URI",
