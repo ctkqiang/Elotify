@@ -29,7 +29,7 @@
         },
         {
           "name": "MONGO_INITDB_DATABASE",
-          "value": "value_farm_notification"
+          "value": "pushnotification"
         }
       ],
       "command": [
@@ -73,7 +73,7 @@
         },
         {
           "name": "MONGODB_URI",
-          "value": "mongodb://admin:vf1300177@localhost:27017/value_farm_notification?authSource=admin&retryWrites=true&w=majority&maxPoolSize=10&serverSelectionTimeoutMS=30000&connectTimeoutMS=30000"
+          "value": "mongodb://admin:vf1300177@localhost:27017/pushnotification?authSource=admin&retryWrites=true&w=majority&maxPoolSize=10&serverSelectionTimeoutMS=30000&connectTimeoutMS=30000"
         },
         {
           "name": "MODE",
@@ -89,7 +89,7 @@
         },
         {
           "name": "MONGODB_DATABASE",
-          "value": "value_farm_notification"
+          "value": "pushnotification"
         },
         {
           "name": "MONGODB_HOST",

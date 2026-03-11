@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/advertisement/all": {
             "get": {
-                "description": "获取当前有效的所有广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。\n\n功能说明：\n- 返回当前时间在有效期内的所有广告\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 按创建时间降序排序（最新的在前）\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW\n- zh: 简体中文\n- en: 英语\n- zh-CN: 中国大陆中文\n- zh-TW: 台湾中文\n\n使用示例：\n- /advertisement/all?locale=zh 获取所有中文广告\n- /advertisement/all?locale=en 获取所有英文广告\n- /advertisement/all 获取所有广告（不限语言）",
+                "description": "获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告，通过show_all参数控制是否包含非活跃广告。\n\n功能说明：\n- 默认返回当前时间在有效期内的所有广告（活跃广告）\n- 如果设置了show_all=true，返回所有广告（包括未开始和已过期的）\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 按创建时间降序排序（最新的在前）\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW\n- zh: 简体中文\n- en: 英语\n- zh-CN: 中国大陆中文\n- zh-TW: 台湾中文\n- show_all: 可选，布尔值，true表示显示所有广告（包括非活跃的），false或未设置表示只显示活跃广告\n\n使用示例：\n- /advertisement/all?locale=zh 获取所有中文活跃广告\n- /advertisement/all?locale=en\u0026show_all=true 获取所有英文广告（包括非活跃的）\n- /advertisement/all?show_all=true 获取所有广告（不限语言，包括非活跃的）",
                 "consumes": [
                     "application/json"
                 ],
@@ -31,8 +31,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "语言区域 (zh, en, zh-CN, zh-TW)",
+                        "description": "语言区域 (zh, en)",
                         "name": "locale",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否显示所有广告（包括非活跃的）",
+                        "name": "show_all",
                         "in": "query"
                     }
                 ],
@@ -627,39 +633,27 @@ const docTemplate = `{
     },
     "definitions": {
         "structure.Advertisement": {
-            "description": "广告数据结构，包含广告的所有信息",
             "type": "object",
             "properties": {
                 "action_url": {
-                    "description": "ActionUrl 点击广告跳转URL，可选\n\t@example\t\"https://example.com/promo\"",
                     "type": "string"
                 },
                 "content": {
-                    "description": "Content 广告内容，可选\n\t@example\t\"春节期间全场商品8折优惠\"",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "CreatedAt 广告创建时间，ISO 8601格式\n\t@example\t\"2024-01-15T10:00:00Z\"",
                     "type": "string"
                 },
                 "end_time": {
-                    "description": "EndTime 广告结束时间，ISO 8601格式，必须晚于开始时间\n\t@example\t\"2024-02-15T23:59:59Z\"",
                     "type": "string"
                 },
                 "image_url": {
-                    "description": "ImageURL 广告图片URL，必填\n\t@example\t\"https://example.com/advertisement.jpg\"",
                     "type": "string"
                 },
                 "locale": {
-                    "description": "Locale 语言区域，遵循 RFC 5646 标准\n\t@example\t\"zh\"",
                     "type": "string"
                 },
                 "start_time": {
-                    "description": "StartTime 广告开始时间，ISO 8601格式\n\t@example\t\"2024-02-01T00:00:00Z\"",
                     "type": "string"
                 },
                 "title": {
-                    "description": "Title 广告标题，可选\n\t@example\t\"春节促销\"",
                     "type": "string"
                 }
             }

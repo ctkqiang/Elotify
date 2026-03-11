@@ -29,7 +29,7 @@ var (
 // @description	同时提供通知记录存储和管理功能，为应用提供完整的推送通知解决方案
 // @BasePath		/
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
 

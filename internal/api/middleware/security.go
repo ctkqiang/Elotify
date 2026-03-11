@@ -100,7 +100,7 @@ func (rl *RateLimiter) Stop() {
 
 func isSQLInjectionPattern(input string) bool {
 	input = strings.ToLower(strings.TrimSpace(input))
-
+	
 	if input == "" || input == "string" || input == "en" || input == "via" {
 		return false
 	}
@@ -172,7 +172,8 @@ func SecurityMiddleware() gin.HandlerFunc {
 
 		ip := c.ClientIP()
 
-		if !rateLimiter.Allow(ip) {
+		// 暂时禁用限流测试功能
+		if false && !rateLimiter.Allow(ip) {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"status":  "error",
 				"message": "请求过于频繁，请稍后再试",

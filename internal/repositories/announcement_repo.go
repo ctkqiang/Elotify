@@ -6,8 +6,10 @@ import (
 	"pushnotification_services/internal/service"
 	"pushnotification_services/internal/structure"
 	"pushnotification_services/internal/utilities"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -22,6 +24,10 @@ func WriteAnnouncement(announcement structure.Announcement) error {
 	}
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
+
+	if announcement.ID == "" {
+		announcement.ID = primitive.NewObjectID().Hex()
+	}
 
 	filter := bson.M{"_id": announcement.ID}
 	update := bson.M{
@@ -49,10 +55,15 @@ func DeleteAnnouncement(id string) error {
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
 	filter := bson.M{"_id": id}
-	_, err = collection.DeleteOne(context.Background(), filter)
+	result, err := collection.DeleteOne(context.Background(), filter)
 	if err != nil {
 		utilities.Log(utilities.ERROR, "删除公告失败: %s", err.Error())
 		return err
+	}
+
+	if result.DeletedCount == 0 {
+		utilities.Log(utilities.WARN, "未找到要删除的公告: %s", id)
+		return nil
 	}
 
 	utilities.Log(utilities.INFO, "公告删除成功: %s", id)
@@ -67,9 +78,16 @@ func GetLatestAnnouncement() (*structure.Announcement, error) {
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
+	// 添加时间过滤，只获取当前有效的公告
+	now := time.Now()
+	filter := bson.M{
+		"started_at": bson.M{"$lte": now},
+		"expires_at": bson.M{"$gte": now},
+	}
+
 	var announcement structure.Announcement
 	limit := int64(1)
-	cursor, err := collection.Find(context.Background(), bson.M{}, &options.FindOptions{
+	cursor, err := collection.Find(context.Background(), filter, &options.FindOptions{
 		Sort:  bson.M{"created_at": -1},
 		Limit: &limit,
 	})
@@ -84,9 +102,11 @@ func GetLatestAnnouncement() (*structure.Announcement, error) {
 			utilities.Log(utilities.ERROR, "解析公告失败: %s", err.Error())
 			return nil, err
 		}
+		utilities.Log(utilities.INFO, "找到最新公告: ID=%s", announcement.ID)
 		return &announcement, nil
 	}
 
+	utilities.Log(utilities.INFO, "未找到当前有效的公告")
 	return nil, nil
 }
 
@@ -113,6 +133,7 @@ func GetAllAnnouncements() ([]structure.Announcement, error) {
 		return nil, err
 	}
 
+	utilities.Log(utilities.INFO, "获取公告列表成功，共 %d 条记录", len(announcements))
 	return announcements, nil
 }
 
@@ -129,10 +150,15 @@ func UpdateAnnouncement(id string, announcement structure.Announcement) error {
 		"$set": announcement,
 	}
 
-	_, err = collection.UpdateOne(context.Background(), filter, update)
+	result, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		utilities.Log(utilities.ERROR, "更新公告失败: %s", err.Error())
 		return err
+	}
+
+	if result.MatchedCount == 0 {
+		utilities.Log(utilities.WARN, "未找到要更新的公告: %s", id)
+		return nil
 	}
 
 	utilities.Log(utilities.INFO, "公告更新成功: %s", id)

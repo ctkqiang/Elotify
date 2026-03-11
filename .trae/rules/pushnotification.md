@@ -1,8 +1,6 @@
 ---
-alwaysApply: false
-description: 
+alwaysApply: true
 ---
-
 ## 1. 代码结构与组织
 - 必须遵循标准 Gin 项目布局：
   - `internal/`：私有代码，包按职责分层：`api`（控制器）→ `service`（业务）→ `repository`（数据）。
