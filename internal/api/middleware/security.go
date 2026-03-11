@@ -100,11 +100,11 @@ func (rl *RateLimiter) Stop() {
 
 func isSQLInjectionPattern(input string) bool {
 	input = strings.ToLower(strings.TrimSpace(input))
-	
+
 	if input == "" || input == "string" || input == "en" || input == "via" {
 		return false
 	}
-	
+
 	sqlPatterns := []string{
 		`\b(select|insert|update|delete|drop|truncate|create|alter|rename|grant|revoke)\s+`,
 		`\b(union|exec|execute|declare|set)\s+`,
@@ -119,14 +119,14 @@ func isSQLInjectionPattern(input string) bool {
 		`#`,
 		`\b1\s*=\s*1\b`,
 	}
-	
+
 	for _, pattern := range sqlPatterns {
 		matched, _ := regexp.MatchString(pattern, input)
 		if matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -135,7 +135,7 @@ func containsMaliciousKeyword(s string) bool {
 	if err := json.Unmarshal([]byte(s), &jsonData); err == nil {
 		return checkJSONForSQLInjection(jsonData)
 	}
-	
+
 	return isSQLInjectionPattern(s)
 }
 

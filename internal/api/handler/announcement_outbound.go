@@ -4,6 +4,7 @@ import (
 	"pushnotification_services/internal/repositories"
 	"pushnotification_services/internal/structure"
 	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -15,7 +16,7 @@ func BroadCastAnnouncementToAllApp(message string, priority structure.Priority) 
 		Priority:  priority,
 		CreatedAt: time.Now(),
 	}
-	
+
 	err := repositories.WriteAnnouncement(announcement)
 	if err != nil {
 		return

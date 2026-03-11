@@ -20,7 +20,6 @@ func WriteAnnouncement(announcement structure.Announcement) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
@@ -46,7 +45,6 @@ func DeleteAnnouncement(id string) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
@@ -66,14 +64,13 @@ func GetLatestAnnouncement() (*structure.Announcement, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
 	var announcement structure.Announcement
 	limit := int64(1)
 	cursor, err := collection.Find(context.Background(), bson.M{}, &options.FindOptions{
-		Sort: bson.M{"created_at": -1},
+		Sort:  bson.M{"created_at": -1},
 		Limit: &limit,
 	})
 	if err != nil {
@@ -98,7 +95,6 @@ func GetAllAnnouncements() ([]structure.Announcement, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 
@@ -125,7 +121,6 @@ func UpdateAnnouncement(id string, announcement structure.Announcement) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(announcementsCollection)
 

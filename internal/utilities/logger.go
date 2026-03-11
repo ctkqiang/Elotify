@@ -34,10 +34,10 @@ const (
 )
 
 var (
-	startTime       = time.Now()
-	CurrentLevel    = INFO
-	errorCallback   func(string)
-	statusMutex     sync.RWMutex
+	startTime     = time.Now()
+	CurrentLevel  = INFO
+	errorCallback func(string)
+	statusMutex   sync.RWMutex
 )
 
 // 注册错误回调函数

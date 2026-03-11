@@ -16,14 +16,15 @@ func Segmentation(router *gin.Engine) {
 }
 
 // GetAllSegments 获取所有 OneSignal 分段
-// @Summary 获取所有分段
-// @Description 获取 OneSignal 中的所有分段信息
-// @Tags 分段管理
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{} "成功响应"
-// @Failure 500 {object} map[string]interface{} "服务器内部错误"
-// @Router /segment/all [get]
+//
+//	@Summary		获取所有分段
+//	@Description	获取 OneSignal 中的所有分段信息
+//	@Tags			分段管理
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}	"成功响应"
+//	@Failure		500	{object}	map[string]interface{}	"服务器内部错误"
+//	@Router			/segment/all [get]
 func GetAllSegments() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		segments := handler.ListAllSegments()
@@ -34,7 +35,7 @@ func GetAllSegments() gin.HandlerFunc {
 			})
 			return
 		}
-		
+
 		c.JSON(200, gin.H{
 			"status":  "success",
 			"message": "获取分段成功",

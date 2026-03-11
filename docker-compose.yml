@@ -1,17 +1,42 @@
 version: "3.8"
 services:
+  mongodb:
+    image: mongo:6.0-focal
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE}
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - pushservice-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
   pushservice:
     build: .
     ports:
       - "8080:8080"
     env_file:
-      - internal/config/.env
+      - .env
     environment:
       - DOCKER_ENV=true
       - MONGODB_HOST=mongodb
     restart: unless-stopped
-    mem_limit: 256m
-    cpus: 0.5
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - pushservice-network
     healthcheck:
       test:
         [
@@ -26,26 +51,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    depends_on:
-      - mongodb
-    networks:
-      - pushservice-network
-
-  mongodb:
-    image: mongo:6.0-focal
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
-    volumes:
-      - mongodb_data:/data/db
-    ports:
-      - "27018:27017"
-    networks:
-      - pushservice-network
-    mem_limit: 512m
-    cpus: 0.5
 
 volumes:
   mongodb_data:

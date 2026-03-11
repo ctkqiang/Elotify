@@ -11,10 +11,10 @@ type OneSignalNotificationRequest struct {
 
 // OneSignalNotificationResponse 定义 OneSignal API 响应结构
 type OneSignalNotificationResponse struct {
-	ID             string   `json:"id"`
-	Recipients     int      `json:"recipients"`
-	ExternalID     string   `json:"external_id,omitempty"`
-	Errors         []string `json:"errors,omitempty"`
+	ID         string   `json:"id"`
+	Recipients int      `json:"recipients"`
+	ExternalID string   `json:"external_id,omitempty"`
+	Errors     []string `json:"errors,omitempty"`
 }
 
 // OneSignalClient 是用于与 OneSignal API 交互的客户端结构

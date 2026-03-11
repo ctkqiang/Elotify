@@ -1,12 +1,11 @@
 package config
 
-
 var (
-	INDEX = "/"
+	INDEX             = "/"
 	WEBSCOKET_CHANNEL = "/ws/announcement"
 
 	SWAGGER_DOCS = "/swagger/*any"
-	ENV = "/.env"
+	ENV          = "/.env"
 
 	HEALTH = "/health"
 )
@@ -26,19 +25,19 @@ var (
 )
 
 var (
-	ANNOUNCEMENT        = "/announcement"
-	ANNOUNCEMENT_CREATE = "/create"
-	ANNOUNCEMENT_DELETE = "/delete"
+	ANNOUNCEMENT          = "/announcement"
+	ANNOUNCEMENT_CREATE   = "/create"
+	ANNOUNCEMENT_DELETE   = "/delete"
 	ANNOUNCEMENT_LATEST   = "/latest"
-	ANNOUNCEMENT_UPDATE = "/update"
+	ANNOUNCEMENT_UPDATE   = "/update"
 	ANNOUNCEMENT_LIST_ALL = "/all"
 )
 
 var (
-	ADVERTISEMENT        = "/advertisement"
-	ADVERTISEMENT_CREATE = "/create"
-	ADVERTISEMENT_DELETE = "/delete"
+	ADVERTISEMENT          = "/advertisement"
+	ADVERTISEMENT_CREATE   = "/create"
+	ADVERTISEMENT_DELETE   = "/delete"
 	ADVERTISEMENT_LATEST   = "/latest"
-	ADVERTISEMENT_UPDATE = "/update"
+	ADVERTISEMENT_UPDATE   = "/update"
 	ADVERTISEMENT_LIST_ALL = "/all"
 )

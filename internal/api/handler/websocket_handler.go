@@ -88,7 +88,7 @@ func HandleWebSocket(manager *structure.WebSocketManager, c *gin.Context) {
 				}
 				break
 			}
-			
+
 			BroadcastMessage(manager, message)
 		}
 	}()

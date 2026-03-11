@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
+
 	"fmt"
-	"os"
+
 	"pushnotification_services/internal/api/middleware"
 	"pushnotification_services/internal/api/routes"
 	"pushnotification_services/internal/config"
@@ -17,38 +17,19 @@ import (
 )
 
 var (
-	Addr = ":80"
-	Port = 80
+	Addr = ":8080"
+	Port = 8080
 )
 
-// @title 推送通知服务
-// @version 1.0
-// @author 钟智强
-// @description 提供推送通知相关的 API 接口，支持发送文本和图片通知，集成 OneSignal 推送服务，
-// @description 提供 WebSocket 实时通知功能，支持向所有用户广播通知，
-// @description 同时提供通知记录存储和管理功能，为应用提供完整的推送通知解决方案
-// @BasePath /
+// @title			推送通知服务
+// @version		1.0
+// @author			钟智强
+// @description	提供推送通知相关的 API 接口，支持发送文本和图片通知，集成 OneSignal 推送服务，
+// @description	提供 WebSocket 实时通知功能，支持向所有用户广播通知，
+// @description	同时提供通知记录存储和管理功能，为应用提供完整的推送通知解决方案
+// @BasePath		/
 func main() {
-	// 优先使用环境变量中的MODE设置
-	mode := os.Getenv("MODE")
-	if mode == "" {
-		// 如果环境变量中没有，使用命令行参数
-		releaseMode := flag.Bool("release", false, "以发布模式运行服务器")
-		flag.Parse()
-		if *releaseMode {
-			mode = "release"
-		} else {
-			mode = "debug"
-		}
-	}
-
-	if mode == "release" {
-		gin.SetMode(gin.ReleaseMode)
-		fmt.Println("运行模式：RELEASE")
-	} else {
-		gin.SetMode(gin.DebugMode)
-		fmt.Println("运行模式：DEBUG")
-	}
+	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
 

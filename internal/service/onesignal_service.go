@@ -22,7 +22,7 @@ type OneSignalClient struct {
 // NewOneSignalClient 创建一个新的 OneSignal 客户端
 func NewOneSignalClient() *OneSignalClient {
 	var (
-		appID = config.OneSignalCreds.AppID
+		appID  = config.OneSignalCreds.AppID
 		apiKey = config.OneSignalCreds.APIKey
 	)
 

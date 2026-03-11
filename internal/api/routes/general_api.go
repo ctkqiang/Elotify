@@ -26,8 +26,8 @@ func Env() gin.HandlerFunc {
 			"service": "push-notification-service",
 			"message": "哎哟喂, 你真以为我会把 .env 放在这儿让你黑掉这服务？",
 			"timestamp": gin.H{
-				"unix":  time.Now().Unix(),
-				"utc":   time.Now().UTC(),
+				"unix": time.Now().Unix(),
+				"utc":  time.Now().UTC(),
 			},
 		})
 	}
@@ -40,8 +40,8 @@ func Index() gin.HandlerFunc {
 			"service": "push-notification-service",
 			"message": "哟，您这是想推个通知？别墨迹，麻溜儿的！",
 			"timestamp": gin.H{
-				"unix":  time.Now().Unix(),
-				"utc":   time.Now().UTC(),
+				"unix": time.Now().Unix(),
+				"utc":  time.Now().UTC(),
 			},
 		})
 	}
@@ -49,7 +49,7 @@ func Index() gin.HandlerFunc {
 
 func CurrentHealth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-	
+
 		mongodbStatus := "connected"
 		client, err := service.GetMongoDatabaseConnection()
 		if err != nil || client == nil {
@@ -57,7 +57,7 @@ func CurrentHealth() gin.HandlerFunc {
 		} else {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			
+
 			err := client.Ping(ctx, nil)
 			if err != nil {
 				mongodbStatus = "disconnected"

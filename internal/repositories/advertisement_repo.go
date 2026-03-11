@@ -2,11 +2,12 @@ package repositories
 
 import (
 	"context"
-	"time"
 	"pushnotification_services/internal/config"
 	"pushnotification_services/internal/service"
 	"pushnotification_services/internal/structure"
 	"pushnotification_services/internal/utilities"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -21,7 +22,6 @@ func WriteAdvertisement(advertisement structure.Advertisement) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(advertisementsCollection)
 
@@ -47,7 +47,6 @@ func DeleteAdvertisement(id string) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(advertisementsCollection)
 
@@ -73,7 +72,6 @@ func GetLatestAdvertisement(locale string) (*structure.Advertisement, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(advertisementsCollection)
 
@@ -116,7 +114,6 @@ func GetAllAdvertisements(locale string) ([]structure.Advertisement, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(advertisementsCollection)
 
@@ -154,7 +151,6 @@ func UpdateAdvertisement(id string, updateData bson.M) error {
 	if err != nil {
 		return err
 	}
-	defer client.Disconnect(context.Background())
 
 	collection := client.Database("pushnotification").Collection(advertisementsCollection)
 

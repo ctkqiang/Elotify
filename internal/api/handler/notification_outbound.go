@@ -24,11 +24,14 @@ func CreateBaseNotification(appID, title, message string) *structure.OneSignalNo
 // 此函数仅用于发送通用通知，只包含标题和消息文本，不包含图片
 // 通知将广播给所有用户，不针对特定分段
 // 参数:
-//   client: OneSignalClient 实例，用于与 OneSignal API 交互
-//   content: NotificationContent 实例，包含通知的标题和消息内容
+//
+//	client: OneSignalClient 实例，用于与 OneSignal API 交互
+//	content: NotificationContent 实例，包含通知的标题和消息内容
+//
 // 返回值:
-//   database.NotificationResponse: 通知发送的响应信息，包含状态和内容
-//   error: 发送过程中遇到的错误，如果成功则为 nil
+//
+//	database.NotificationResponse: 通知发送的响应信息，包含状态和内容
+//	error: 发送过程中遇到的错误，如果成功则为 nil
 func SendGeneralNotification(client *structure.OneSignalClient, content *structure.NotificationContent) (database.NotificationResponse, error) {
 	utilities.Log(utilities.INFO, "正在发送通用通知")
 
@@ -45,7 +48,7 @@ func SendGeneralNotification(client *structure.OneSignalClient, content *structu
 		},
 		IncludedSegments: []string{"All"},
 	}
-	
+
 	// 添加图片支持
 	if content.ImageUrl != nil && *content.ImageUrl != "" {
 		requestBody.BigPicture = *content.ImageUrl
@@ -64,7 +67,7 @@ func SendGeneralNotification(client *structure.OneSignalClient, content *structu
 	utilities.Log(utilities.INFO, "通用通知发送成功")
 
 	if err := repositories.SaveRecord(&database.NotificationResponse{
-		Status: database.StatusSuccess,
+		Status:  database.StatusSuccess,
 		Content: content,
 	}); err != nil {
 		utilities.Log(utilities.ERROR, "保存通知记录失败: %s", err.Error())
@@ -72,9 +75,9 @@ func SendGeneralNotification(client *structure.OneSignalClient, content *structu
 			Status: database.StatusFailed,
 		}, err
 	}
-	
+
 	return database.NotificationResponse{
-		Status: database.StatusSuccess,
+		Status:  database.StatusSuccess,
 		Content: content,
 	}, nil
 }

@@ -631,35 +631,35 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action_url": {
-                    "description": "ActionUrl 点击广告跳转URL，可选\n@example \"https://example.com/promo\"",
+                    "description": "ActionUrl 点击广告跳转URL，可选\n\t@example\t\"https://example.com/promo\"",
                     "type": "string"
                 },
                 "content": {
-                    "description": "Content 广告内容，可选\n@example \"春节期间全场商品8折优惠\"",
+                    "description": "Content 广告内容，可选\n\t@example\t\"春节期间全场商品8折优惠\"",
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "CreatedAt 广告创建时间，ISO 8601格式\n@example \"2024-01-15T10:00:00Z\"",
+                    "description": "CreatedAt 广告创建时间，ISO 8601格式\n\t@example\t\"2024-01-15T10:00:00Z\"",
                     "type": "string"
                 },
                 "end_time": {
-                    "description": "EndTime 广告结束时间，ISO 8601格式，必须晚于开始时间\n@example \"2024-02-15T23:59:59Z\"",
+                    "description": "EndTime 广告结束时间，ISO 8601格式，必须晚于开始时间\n\t@example\t\"2024-02-15T23:59:59Z\"",
                     "type": "string"
                 },
                 "image_url": {
-                    "description": "ImageURL 广告图片URL，必填\n@example \"https://example.com/advertisement.jpg\"",
+                    "description": "ImageURL 广告图片URL，必填\n\t@example\t\"https://example.com/advertisement.jpg\"",
                     "type": "string"
                 },
                 "locale": {
-                    "description": "Locale 语言区域，遵循 RFC 5646 标准\n@example \"zh\"",
+                    "description": "Locale 语言区域，遵循 RFC 5646 标准\n\t@example\t\"zh\"",
                     "type": "string"
                 },
                 "start_time": {
-                    "description": "StartTime 广告开始时间，ISO 8601格式\n@example \"2024-02-01T00:00:00Z\"",
+                    "description": "StartTime 广告开始时间，ISO 8601格式\n\t@example\t\"2024-02-01T00:00:00Z\"",
                     "type": "string"
                 },
                 "title": {
-                    "description": "Title 广告标题，可选\n@example \"春节促销\"",
+                    "description": "Title 广告标题，可选\n\t@example\t\"春节促销\"",
                     "type": "string"
                 }
             }
