@@ -157,12 +157,25 @@ func GetAllAdvertisements(locale string, showAll bool) ([]structure.Advertisemen
 
 	collection := client.Database(databaseName).Collection(advertisementsCollection)
 
-	// Build filter: only locale if provided (time filtering removed as requested)
+	// Build filter
 	filter := bson.M{}
+	
+	// Locale filter
 	if locale != "" {
 		filter["locale"] = locale
 	} else {
 		filter["locale"] = "en"
+	}
+
+	// Time filter based on showAll parameter
+	currentTime := time.Now()
+	if !showAll {
+		// Only show active advertisements (current time within start and end time)
+		filter["start_time"] = bson.M{"$lte": currentTime}
+		filter["end_time"] = bson.M{"$gte": currentTime}
+		utilities.Log(utilities.INFO, "显示活跃广告（当前时间: %v）", currentTime)
+	} else {
+		utilities.Log(utilities.INFO, "显示所有广告（包括非活跃的）")
 	}
 
 	// Debug: log the filter being used
