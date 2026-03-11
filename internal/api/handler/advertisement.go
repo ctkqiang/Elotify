@@ -195,10 +195,11 @@ func GetLatestAdvertisement() gin.HandlerFunc {
 // GetAllAdvertisements 获取所有广告
 //
 //	@Summary		获取所有广告
-//	@Description	获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。
+//	@Description	获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告，通过show_all参数控制是否包含非活跃广告。
 //	@Description
 //	@Description	功能说明：
-//	@Description	- 返回所有广告（已移除时间过滤，包含所有状态的广告）
+//	@Description	- 默认返回当前时间在有效期内的所有广告（活跃广告）
+//	@Description	- 如果设置了show_all=true，返回所有广告（包括未开始和已过期的）
 //	@Description	- 如果提供了locale参数，只返回匹配该语言的广告
 //	@Description	- 如果未提供locale参数，默认返回英文广告（locale=en）
 //	@Description	- 按创建时间降序排序（最新的在前）
@@ -207,17 +208,18 @@ func GetLatestAdvertisement() gin.HandlerFunc {
 //	@Description	- locale: 可选，语言区域过滤，支持的值：zh、en
 //	@Description	- zh: 简体中文
 //	@Description	- en: 英语
-//	@Description	- show_all: 参数已弃用，保留兼容性但不影响查询结果
+//	@Description	- show_all: 可选，布尔值，true表示显示所有广告（包括非活跃的），false或未设置表示只显示活跃广告
 //	@Description
 //	@Description	使用示例：
-//	@Description	- /advertisement/all?locale=zh 获取所有中文广告
-//	@Description	- /advertisement/all?locale=en 获取所有英文广告
-//	@Description	- /advertisement/all 获取所有英文广告（默认locale=en）
+//	@Description	- /advertisement/all?locale=zh 获取所有中文活跃广告
+//	@Description	- /advertisement/all?locale=en&show_all=true 获取所有英文广告（包括非活跃的）
+//	@Description	- /advertisement/all?show_all=true 获取所有英文广告（包括非活跃的）
+//	@Description	- /advertisement/all 获取所有英文活跃广告（默认locale=en）
 //	@Tags			广告管理
 //	@Accept			json
 //	@Produce		json
 //	@Param			locale	query		string					false	"语言区域 (zh, en)"
-//	@Param			show_all	query		boolean					false	"是否显示所有广告（已弃用，保留兼容性）"
+//	@Param			show_all	query		boolean					false	"是否显示所有广告（包括非活跃的）"
 //	@Success		200		{object}	map[string]interface{}	"成功响应"
 //	@Failure		400		{object}	map[string]interface{}	"无效的locale参数"
 //	@Failure		500		{object}	map[string]interface{}	"服务器内部错误"
@@ -225,7 +227,6 @@ func GetLatestAdvertisement() gin.HandlerFunc {
 func GetAllAdvertisements() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		locale := c.Query("locale")
-		showAll := c.Query("show_all") == "true"
 
 		if locale != "" && locale != "zh" && locale != "en" {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -235,7 +236,7 @@ func GetAllAdvertisements() gin.HandlerFunc {
 			return
 		}
 
-		advertisements, err := repositories.GetAllAdvertisements(locale, showAll)
+		advertisements, err := repositories.GetAllAdvertisements(locale, true)
 		if err != nil {
 			utilities.Log(utilities.ERROR, "获取广告列表失败: %s", err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{

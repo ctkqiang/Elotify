@@ -14,6 +14,6 @@ func Advertisement(router *gin.Engine) {
 		public.DELETE(config.ADVERTISEMENT_DELETE+"/:id", handler.DeleteAdvertisement())
 		public.GET(config.ADVERTISEMENT_LATEST, handler.GetLatestAdvertisement())
 		public.PUT(config.ADVERTISEMENT_UPDATE+"/:id", handler.UpdateAdvertisement())
-		public.GET(config.ADVERTISEMENT_LIST_ALL, handler.GetAllAdvertisements())
+		public.GET(config.ADVERTISEMENT_LIST_ALL + "&show_all=true", handler.GetAllAdvertisements())
 	}
 }

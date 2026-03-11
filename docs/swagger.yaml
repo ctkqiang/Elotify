@@ -69,10 +69,11 @@ paths:
       consumes:
       - application/json
       description: |-
-        获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。
+        获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告，通过show_all参数控制是否包含非活跃广告。
 
         功能说明：
-        - 返回所有广告（已移除时间过滤，包含所有状态的广告）
+        - 默认返回当前时间在有效期内的所有广告（活跃广告）
+        - 如果设置了show_all=true，返回所有广告（包括未开始和已过期的）
         - 如果提供了locale参数，只返回匹配该语言的广告
         - 如果未提供locale参数，默认返回英文广告（locale=en）
         - 按创建时间降序排序（最新的在前）
@@ -81,18 +82,19 @@ paths:
         - locale: 可选，语言区域过滤，支持的值：zh、en
         - zh: 简体中文
         - en: 英语
-        - show_all: 参数已弃用，保留兼容性但不影响查询结果
+        - show_all: 可选，布尔值，true表示显示所有广告（包括非活跃的），false或未设置表示只显示活跃广告
 
         使用示例：
-        - /advertisement/all?locale=zh 获取所有中文广告
-        - /advertisement/all?locale=en 获取所有英文广告
-        - /advertisement/all 获取所有英文广告（默认locale=en）
+        - /advertisement/all?locale=zh 获取所有中文活跃广告
+        - /advertisement/all?locale=en&show_all=true 获取所有英文广告（包括非活跃的）
+        - /advertisement/all?show_all=true 获取所有英文广告（包括非活跃的）
+        - /advertisement/all 获取所有英文活跃广告（默认locale=en）
       parameters:
       - description: 语言区域 (zh, en)
         in: query
         name: locale
         type: string
-      - description: 是否显示所有广告（已弃用，保留兼容性）
+      - description: 是否显示所有广告（包括非活跃的）
         in: query
         name: show_all
         type: boolean
