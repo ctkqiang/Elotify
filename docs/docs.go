@@ -15,9 +15,268 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/advertisement/all": {
+            "get": {
+                "description": "获取当前有效的所有广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。\n\n功能说明：\n- 返回当前时间在有效期内的所有广告\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 按创建时间降序排序（最新的在前）\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW\n- zh: 简体中文\n- en: 英语\n- zh-CN: 中国大陆中文\n- zh-TW: 台湾中文\n\n使用示例：\n- /advertisement/all?locale=zh 获取所有中文广告\n- /advertisement/all?locale=en 获取所有英文广告\n- /advertisement/all 获取所有广告（不限语言）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "广告管理"
+                ],
+                "summary": "获取所有广告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "语言区域 (zh, en, zh-CN, zh-TW)",
+                        "name": "locale",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "无效的locale参数",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/advertisement/create": {
+            "post": {
+                "description": "创建一个新的广告并保存到数据库。广告包含标题、内容、图片URL、开始时间、结束时间、语言区域等信息。\n\n必填字段：\n- title: 广告标题，可为空字符串\n- content: 广告内容，可为空字符串\n- image_url: 广告图片URL，不能为空\n- start_time: 广告开始时间，ISO 8601格式\n- end_time: 广告结束时间，必须晚于开始时间\n- locale: 语言区域，遵循 RFC 5646 标准，例如 zh、en、zh-CN、zh-TW\n- action_url: 点击广告跳转URL（可选）\n\n注意事项：\n- 广告将在开始时间和结束时间之间有效\n- locale参数必须符合RFC 5646标准\n- image_url为必填字段",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "广告管理"
+                ],
+                "summary": "创建新广告",
+                "parameters": [
+                    {
+                        "description": "广告信息",
+                        "name": "advertisement",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/structure.Advertisement"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/advertisement/delete/{id}": {
+            "delete": {
+                "description": "根据广告ID从数据库中永久删除指定的广告记录。此操作不可恢复，请谨慎使用。\n\n参数说明：\n- id: 广告的唯一标识符（MongoDB ObjectID），必须存在于数据库中\n\n删除成功后，该广告将不再对用户可见，且无法恢复。\n如果指定的ID不存在，将返回404错误。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "广告管理"
+                ],
+                "summary": "删除广告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "广告不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/advertisement/latest": {
+            "get": {
+                "description": "获取当前有效的、最新的广告信息。可以通过locale参数过滤特定语言的广告。\n\n功能说明：\n- 返回当前时间在有效期内的最新广告\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 如果没有找到广告，返回空数据\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW\n- zh: 简体中文\n- en: 英语\n- zh-CN: 中国大陆中文\n- zh-TW: 台湾中文\n\n使用示例：\n- /advertisement/latest?locale=zh 获取最新的中文广告\n- /advertisement/latest?locale=en 获取最新的英文广告\n- /advertisement/latest 获取最新广告（不限语言）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "广告管理"
+                ],
+                "summary": "获取最新广告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "语言区域 (zh, en, zh-CN, zh-TW)",
+                        "name": "locale",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "无效的locale参数",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/advertisement/update/{id}": {
+            "put": {
+                "description": "根据广告ID更新广告信息。可以部分更新广告字段，只更新提供的字段。\n\n参数说明：\n- id: 广告的唯一标识符（MongoDB ObjectID），必须存在于数据库中\n- updateData: 要更新的字段键值对，支持部分更新\n\n可更新字段：\n- title: 广告标题\n- content: 广告内容\n- image_url: 广告图片URL\n- start_time: 广告开始时间\n- end_time: 广告结束时间\n- locale: 语言区域\n- action_url: 点击广告跳转URL\n\n注意事项：\n- 不能更新_id和id字段\n- 只更新提供的字段，未提供的字段保持不变\n- 时间格式必须符合ISO 8601标准",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "广告管理"
+                ],
+                "summary": "更新广告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新字段键值对",
+                        "name": "updateData",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "广告不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/announcement/all": {
             "get": {
-                "description": "获取所有公告信息，按创建时间降序排序",
+                "description": "获取系统中所有的公告信息，按创建时间降序排序。返回的公告列表包含每个公告的完整信息。\n\n返回数据结构：\n- 数组形式，每个元素是一个完整的公告对象\n- 按创建时间从新到旧排序\n- 包含公告的所有字段信息\n\n使用场景：\n- 管理后台查看所有公告\n- 批量处理公告数据\n- 数据分析和统计\n\n如果系统中没有任何公告，将返回空数组。",
                 "consumes": [
                     "application/json"
                 ],
@@ -48,7 +307,7 @@ const docTemplate = `{
         },
         "/announcement/create": {
             "post": {
-                "description": "创建一个新的公告并保存到数据库",
+                "description": "创建一个新的公告并保存到数据库。公告用于向用户发布重要信息，包括系统维护、活动通知、节假日安排等。\n\n必填字段：\n- type: 公告类型，可选值：HOLIDAY（节假日）、EVENT（活动通知）\n- message: 公告内容，支持多语言文本\n- priority: 优先级，可选值：HIGH（高）、NORMAL（正常）、LOW（低）\n- started_at: 开始时间，ISO 8601格式\n- expires_at: 过期时间，必须晚于开始时间\n\n示例请求：\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"id\": \"announcement_001\",\n\"type\": \"EVENT\",\n\"message\": \"系统维护通知：将于本周末进行系统升级维护\",\n\"priority\": \"HIGH\",\n\"created_at\": \"2024-01-15T10:00:00Z\",\n\"started_at\": \"2024-01-20T09:00:00Z\",\n\"expires_at\": \"2024-01-21T18:00:00Z\"\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n注意事项：\n- 公告ID必须唯一，建议使用有意义的标识符\n- 时间格式必须符合ISO 8601标准\n- 开始时间必须早于过期时间\n- 消息内容建议简洁明了，不超过500字符",
                 "consumes": [
                     "application/json"
                 ],
@@ -97,7 +356,7 @@ const docTemplate = `{
         },
         "/announcement/delete": {
             "delete": {
-                "description": "根据 ID 删除公告",
+                "description": "根据公告ID从数据库中永久删除指定的公告记录。此操作不可恢复，请谨慎使用。\n\n参数说明：\n- id: 公告的唯一标识符，必须存在于数据库中\n\n删除成功后，该公告将不再对用户可见，且无法恢复。\n如果指定的ID不存在，将返回404错误。",
                 "consumes": [
                     "application/json"
                 ],
@@ -144,7 +403,7 @@ const docTemplate = `{
         },
         "/announcement/latest": {
             "get": {
-                "description": "获取最新的公告信息",
+                "description": "获取系统中最新发布的公告信息。该接口返回按创建时间排序的最新一条公告记录。\n\n返回的公告信息包含完整的数据结构，包括：\n- 公告ID、类型、内容、优先级等基本信息\n- 创建时间、开始时间、过期时间等时间信息\n\n如果没有找到任何公告，将返回404错误。\n此接口常用于应用启动时获取最新的重要通知。",
                 "consumes": [
                     "application/json"
                 ],
@@ -182,7 +441,7 @@ const docTemplate = `{
         },
         "/announcement/update": {
             "put": {
-                "description": "根据 ID 更新公告信息",
+                "description": "根据公告ID更新现有的公告信息。可以修改公告的所有字段，包括类型、内容、优先级和时间信息。\n\n参数说明：\n- id: 要更新的公告ID，必须存在于数据库中\n- announcement: 完整的公告对象，包含所有需要更新的字段\n\n更新规则：\n- 开始时间必须早于过期时间\n- 消息内容不能为空\n- 优先级必须在有效范围内（HIGH、NORMAL、LOW）\n- 类型必须在有效范围内（HOLIDAY、EVENT）\n\n更新成功后，将返回更新后的完整公告信息。\n如果指定的ID不存在，将返回404错误。",
                 "consumes": [
                     "application/json"
                 ],
@@ -367,31 +626,46 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "structure.Announcement": {
+        "structure.Advertisement": {
+            "description": "广告数据结构，包含广告的所有信息",
             "type": "object",
             "properties": {
+                "action_url": {
+                    "description": "ActionUrl 点击广告跳转URL，可选\n@example \"https://example.com/promo\"",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "Content 广告内容，可选\n@example \"春节期间全场商品8折优惠\"",
+                    "type": "string"
+                },
                 "created_at": {
+                    "description": "CreatedAt 广告创建时间，ISO 8601格式\n@example \"2024-01-15T10:00:00Z\"",
                     "type": "string"
                 },
-                "expires_at": {
+                "end_time": {
+                    "description": "EndTime 广告结束时间，ISO 8601格式，必须晚于开始时间\n@example \"2024-02-15T23:59:59Z\"",
                     "type": "string"
                 },
-                "id": {
+                "image_url": {
+                    "description": "ImageURL 广告图片URL，必填\n@example \"https://example.com/advertisement.jpg\"",
                     "type": "string"
                 },
-                "message": {
+                "locale": {
+                    "description": "Locale 语言区域，遵循 RFC 5646 标准\n@example \"zh\"",
                     "type": "string"
                 },
-                "priority": {
+                "start_time": {
+                    "description": "StartTime 广告开始时间，ISO 8601格式\n@example \"2024-02-01T00:00:00Z\"",
                     "type": "string"
                 },
-                "started_at": {
-                    "type": "string"
-                },
-                "type": {
+                "title": {
+                    "description": "Title 广告标题，可选\n@example \"春节促销\"",
                     "type": "string"
                 }
             }
+        },
+        "structure.Announcement": {
+            "type": "object"
         },
         "structure.AuditTrail": {
             "type": "object",

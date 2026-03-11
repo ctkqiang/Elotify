@@ -40,6 +40,7 @@ type JWEConfig struct {
 var (
 	COLLECTION_NOTIFICATIONS = "notifications"
 	COLLECTION_ANNOUNCEMENTS = "announcements"
+	COLLECTION_ADVERTISEMENTS = "advertisements"
 )
 
 var (

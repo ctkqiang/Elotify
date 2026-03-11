@@ -33,3 +33,12 @@ var (
 	ANNOUNCEMENT_UPDATE = "/update"
 	ANNOUNCEMENT_LIST_ALL = "/all"
 )
+
+var (
+	ADVERTISEMENT        = "/advertisement"
+	ADVERTISEMENT_CREATE = "/create"
+	ADVERTISEMENT_DELETE = "/delete"
+	ADVERTISEMENT_LATEST   = "/latest"
+	ADVERTISEMENT_UPDATE = "/update"
+	ADVERTISEMENT_LIST_ALL = "/all"
+)

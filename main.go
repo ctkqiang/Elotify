@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	Addr = ":8080"
-	Port = 8080
+	Addr = ":80"
+	Port = 80
 )
 
 // @title 推送通知服务
@@ -63,6 +63,7 @@ func main() {
 	routes.WebSocketRoutes(router)
 	routes.Segmentation(router)
 	routes.Announcement(router)
+	routes.Advertisement(router)
 
 	if err := router.Run(fmt.Sprintf(":%d", Port)); err != nil {
 		utilities.Log(utilities.ERROR, "HTTP 服务启动失败: %v", err)

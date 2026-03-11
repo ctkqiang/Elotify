@@ -1,21 +1,50 @@
 basePath: /
 definitions:
-  structure.Announcement:
+  structure.Advertisement:
+    description: 广告数据结构，包含广告的所有信息
     properties:
+      action_url:
+        description: |-
+          ActionUrl 点击广告跳转URL，可选
+          @example "https://example.com/promo"
+        type: string
+      content:
+        description: |-
+          Content 广告内容，可选
+          @example "春节期间全场商品8折优惠"
+        type: string
       created_at:
+        description: |-
+          CreatedAt 广告创建时间，ISO 8601格式
+          @example "2024-01-15T10:00:00Z"
         type: string
-      expires_at:
+      end_time:
+        description: |-
+          EndTime 广告结束时间，ISO 8601格式，必须晚于开始时间
+          @example "2024-02-15T23:59:59Z"
         type: string
-      id:
+      image_url:
+        description: |-
+          ImageURL 广告图片URL，必填
+          @example "https://example.com/advertisement.jpg"
         type: string
-      message:
+      locale:
+        description: |-
+          Locale 语言区域，遵循 RFC 5646 标准
+          @example "zh"
         type: string
-      priority:
+      start_time:
+        description: |-
+          StartTime 广告开始时间，ISO 8601格式
+          @example "2024-02-01T00:00:00Z"
         type: string
-      started_at:
+      title:
+        description: |-
+          Title 广告标题，可选
+          @example "春节促销"
         type: string
-      type:
-        type: string
+    type: object
+  structure.Announcement:
     type: object
   structure.AuditTrail:
     properties:
@@ -62,11 +91,277 @@ info:
   title: 推送通知服务
   version: "1.0"
 paths:
+  /advertisement/all:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        获取当前有效的所有广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。
+
+        功能说明：
+        - 返回当前时间在有效期内的所有广告
+        - 如果提供了locale参数，只返回匹配该语言的广告
+        - 按创建时间降序排序（最新的在前）
+
+        参数说明：
+        - locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW
+        - zh: 简体中文
+        - en: 英语
+        - zh-CN: 中国大陆中文
+        - zh-TW: 台湾中文
+
+        使用示例：
+        - /advertisement/all?locale=zh 获取所有中文广告
+        - /advertisement/all?locale=en 获取所有英文广告
+        - /advertisement/all 获取所有广告（不限语言）
+      parameters:
+      - description: 语言区域 (zh, en, zh-CN, zh-TW)
+        in: query
+        name: locale
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 无效的locale参数
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取所有广告
+      tags:
+      - 广告管理
+  /advertisement/create:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        创建一个新的广告并保存到数据库。广告包含标题、内容、图片URL、开始时间、结束时间、语言区域等信息。
+
+        必填字段：
+        - title: 广告标题，可为空字符串
+        - content: 广告内容，可为空字符串
+        - image_url: 广告图片URL，不能为空
+        - start_time: 广告开始时间，ISO 8601格式
+        - end_time: 广告结束时间，必须晚于开始时间
+        - locale: 语言区域，遵循 RFC 5646 标准，例如 zh、en、zh-CN、zh-TW
+        - action_url: 点击广告跳转URL（可选）
+
+        注意事项：
+        - 广告将在开始时间和结束时间之间有效
+        - locale参数必须符合RFC 5646标准
+        - image_url为必填字段
+      parameters:
+      - description: 广告信息
+        in: body
+        name: advertisement
+        required: true
+        schema:
+          $ref: '#/definitions/structure.Advertisement'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 创建新广告
+      tags:
+      - 广告管理
+  /advertisement/delete/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        根据广告ID从数据库中永久删除指定的广告记录。此操作不可恢复，请谨慎使用。
+
+        参数说明：
+        - id: 广告的唯一标识符（MongoDB ObjectID），必须存在于数据库中
+
+        删除成功后，该广告将不再对用户可见，且无法恢复。
+        如果指定的ID不存在，将返回404错误。
+      parameters:
+      - description: 广告 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 广告不存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除广告
+      tags:
+      - 广告管理
+  /advertisement/latest:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        获取当前有效的、最新的广告信息。可以通过locale参数过滤特定语言的广告。
+
+        功能说明：
+        - 返回当前时间在有效期内的最新广告
+        - 如果提供了locale参数，只返回匹配该语言的广告
+        - 如果没有找到广告，返回空数据
+
+        参数说明：
+        - locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW
+        - zh: 简体中文
+        - en: 英语
+        - zh-CN: 中国大陆中文
+        - zh-TW: 台湾中文
+
+        使用示例：
+        - /advertisement/latest?locale=zh 获取最新的中文广告
+        - /advertisement/latest?locale=en 获取最新的英文广告
+        - /advertisement/latest 获取最新广告（不限语言）
+      parameters:
+      - description: 语言区域 (zh, en, zh-CN, zh-TW)
+        in: query
+        name: locale
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 无效的locale参数
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取最新广告
+      tags:
+      - 广告管理
+  /advertisement/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        根据广告ID更新广告信息。可以部分更新广告字段，只更新提供的字段。
+
+        参数说明：
+        - id: 广告的唯一标识符（MongoDB ObjectID），必须存在于数据库中
+        - updateData: 要更新的字段键值对，支持部分更新
+
+        可更新字段：
+        - title: 广告标题
+        - content: 广告内容
+        - image_url: 广告图片URL
+        - start_time: 广告开始时间
+        - end_time: 广告结束时间
+        - locale: 语言区域
+        - action_url: 点击广告跳转URL
+
+        注意事项：
+        - 不能更新_id和id字段
+        - 只更新提供的字段，未提供的字段保持不变
+        - 时间格式必须符合ISO 8601标准
+      parameters:
+      - description: 广告 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新字段键值对
+        in: body
+        name: updateData
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功响应
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 广告不存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新广告
+      tags:
+      - 广告管理
   /announcement/all:
     get:
       consumes:
       - application/json
-      description: 获取所有公告信息，按创建时间降序排序
+      description: |-
+        获取系统中所有的公告信息，按创建时间降序排序。返回的公告列表包含每个公告的完整信息。
+
+        返回数据结构：
+        - 数组形式，每个元素是一个完整的公告对象
+        - 按创建时间从新到旧排序
+        - 包含公告的所有字段信息
+
+        使用场景：
+        - 管理后台查看所有公告
+        - 批量处理公告数据
+        - 数据分析和统计
+
+        如果系统中没有任何公告，将返回空数组。
       produces:
       - application/json
       responses:
@@ -87,7 +382,34 @@ paths:
     post:
       consumes:
       - application/json
-      description: 创建一个新的公告并保存到数据库
+      description: |-
+        创建一个新的公告并保存到数据库。公告用于向用户发布重要信息，包括系统维护、活动通知、节假日安排等。
+
+        必填字段：
+        - type: 公告类型，可选值：HOLIDAY（节假日）、EVENT（活动通知）
+        - message: 公告内容，支持多语言文本
+        - priority: 优先级，可选值：HIGH（高）、NORMAL（正常）、LOW（低）
+        - started_at: 开始时间，ISO 8601格式
+        - expires_at: 过期时间，必须晚于开始时间
+
+        示例请求：
+        ```json
+        {
+        "id": "announcement_001",
+        "type": "EVENT",
+        "message": "系统维护通知：将于本周末进行系统升级维护",
+        "priority": "HIGH",
+        "created_at": "2024-01-15T10:00:00Z",
+        "started_at": "2024-01-20T09:00:00Z",
+        "expires_at": "2024-01-21T18:00:00Z"
+        }
+        ```
+
+        注意事项：
+        - 公告ID必须唯一，建议使用有意义的标识符
+        - 时间格式必须符合ISO 8601标准
+        - 开始时间必须早于过期时间
+        - 消息内容建议简洁明了，不超过500字符
       parameters:
       - description: 公告信息
         in: body
@@ -120,7 +442,14 @@ paths:
     delete:
       consumes:
       - application/json
-      description: 根据 ID 删除公告
+      description: |-
+        根据公告ID从数据库中永久删除指定的公告记录。此操作不可恢复，请谨慎使用。
+
+        参数说明：
+        - id: 公告的唯一标识符，必须存在于数据库中
+
+        删除成功后，该公告将不再对用户可见，且无法恢复。
+        如果指定的ID不存在，将返回404错误。
       parameters:
       - description: 公告 ID
         in: query
@@ -152,7 +481,15 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取最新的公告信息
+      description: |-
+        获取系统中最新发布的公告信息。该接口返回按创建时间排序的最新一条公告记录。
+
+        返回的公告信息包含完整的数据结构，包括：
+        - 公告ID、类型、内容、优先级等基本信息
+        - 创建时间、开始时间、过期时间等时间信息
+
+        如果没有找到任何公告，将返回404错误。
+        此接口常用于应用启动时获取最新的重要通知。
       produces:
       - application/json
       responses:
@@ -178,7 +515,21 @@ paths:
     put:
       consumes:
       - application/json
-      description: 根据 ID 更新公告信息
+      description: |-
+        根据公告ID更新现有的公告信息。可以修改公告的所有字段，包括类型、内容、优先级和时间信息。
+
+        参数说明：
+        - id: 要更新的公告ID，必须存在于数据库中
+        - announcement: 完整的公告对象，包含所有需要更新的字段
+
+        更新规则：
+        - 开始时间必须早于过期时间
+        - 消息内容不能为空
+        - 优先级必须在有效范围内（HIGH、NORMAL、LOW）
+        - 类型必须在有效范围内（HOLIDAY、EVENT）
+
+        更新成功后，将返回更新后的完整公告信息。
+        如果指定的ID不存在，将返回404错误。
       parameters:
       - description: 公告 ID
         in: query
