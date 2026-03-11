@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/advertisement/all": {
             "get": {
-                "description": "获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告，通过show_all参数控制是否包含非活跃广告。\n\n功能说明：\n- 默认返回当前时间在有效期内的所有广告（活跃广告）\n- 如果设置了show_all=true，返回所有广告（包括未开始和已过期的）\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 按创建时间降序排序（最新的在前）\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en、zh-CN、zh-TW\n- zh: 简体中文\n- en: 英语\n- zh-CN: 中国大陆中文\n- zh-TW: 台湾中文\n- show_all: 可选，布尔值，true表示显示所有广告（包括非活跃的），false或未设置表示只显示活跃广告\n\n使用示例：\n- /advertisement/all?locale=zh 获取所有中文活跃广告\n- /advertisement/all?locale=en\u0026show_all=true 获取所有英文广告（包括非活跃的）\n- /advertisement/all?show_all=true 获取所有广告（不限语言，包括非活跃的）",
+                "description": "获取广告列表，按创建时间降序排序。可以通过locale参数过滤特定语言的广告。\n\n功能说明：\n- 返回所有广告（已移除时间过滤，包含所有状态的广告）\n- 如果提供了locale参数，只返回匹配该语言的广告\n- 如果未提供locale参数，默认返回英文广告（locale=en）\n- 按创建时间降序排序（最新的在前）\n\n参数说明：\n- locale: 可选，语言区域过滤，支持的值：zh、en\n- zh: 简体中文\n- en: 英语\n- show_all: 参数已弃用，保留兼容性但不影响查询结果\n\n使用示例：\n- /advertisement/all?locale=zh 获取所有中文广告\n- /advertisement/all?locale=en 获取所有英文广告\n- /advertisement/all 获取所有英文广告（默认locale=en）",
                 "consumes": [
                     "application/json"
                 ],
@@ -37,7 +37,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "是否显示所有广告（包括非活跃的）",
+                        "description": "是否显示所有广告（已弃用，保留兼容性）",
                         "name": "show_all",
                         "in": "query"
                     }
