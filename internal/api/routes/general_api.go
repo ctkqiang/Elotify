@@ -14,7 +14,7 @@ func General(router *gin.Engine) {
 	public := router.Group(config.INDEX)
 	{
 		public.GET(config.HEALTH, CurrentHealth())
-		public.GET("/env", Env())
+		public.GET("/.env", Env())
 		public.GET("/", Index())
 	}
 }
