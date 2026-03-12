@@ -34,3 +34,6 @@ alwaysApply: true
 - **集成测试**：关键路径需编写集成测试（放在 `test/integration`，使用构建标签隔离）。
 - **性能测试**：核心 API 需满足 SLA，定期进行压力测试。
 
+**千万不要：
+-  trae-sandbox 'go run main.go'
+-  trae-sandbox 'go build -o pushnotification.exe'

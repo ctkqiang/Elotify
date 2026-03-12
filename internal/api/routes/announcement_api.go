@@ -164,7 +164,6 @@ func GetLatestAnnouncement() gin.HandlerFunc {
 			return
 		}
 
-		
 		if announcement == nil {
 			c.JSON(http.StatusOK, gin.H{
 				"status":  "success",
