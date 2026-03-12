@@ -34,7 +34,7 @@
       ],
       "command": [
         "bash", "-c",
-        "mongod --auth --bind_ip_all --wiredTigerCacheSizeGB 0.5 & sleep 10 && mongosh admin --eval \\\"db.createUser({user: 'admin', pwd: 'vf1300177', roles: [{role: 'root', db: 'admin'}], mechanisms: ['SCRAM-SHA-256']})\\\" && wait"
+        "mongod --auth --bind_ip_all --wiredTigerCacheSizeGB 0.5 & sleep 15 && mongosh admin --eval 'db.createUser({user: \"admin\", pwd: \"vf1300177\", roles: [{role: \"root\", db: \"admin\"}], mechanisms: [\"SCRAM-SHA-256\"]})' && wait"
       ],
       "healthCheck": {
         "command": [
@@ -44,7 +44,7 @@
         "interval": 60,
         "timeout": 30,
         "retries": 3,
-        "startPeriod": 120
+        "startPeriod": 180
       },
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -145,7 +145,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "curl -f http://localhost:80/health || exit 1"
+          "curl -f http://localhost:8082/health || exit 1"
         ],
         "interval": 30,
         "timeout": 10,
