@@ -62,7 +62,7 @@
       "memory": 1024,
       "portMappings": [
         {
-          "containerPort": 80,
+          "containerPort": 8082,
           "protocol": "tcp"
         }
       ],
