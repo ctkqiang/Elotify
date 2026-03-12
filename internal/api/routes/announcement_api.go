@@ -149,9 +149,8 @@ func DeleteAnnouncement() gin.HandlerFunc {
 //	@Tags			公告管理
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	map[string]interface{}	"成功响应"
-//	@Failure		404	{object}	map[string]interface{}	"没有找到公告"
-//	@Failure		500	{object}	map[string]interface{}	"服务器内部错误"
+// @Success		200	{object}	map[string]interface{}	"成功响应"
+// @Failure		500	{object}	map[string]interface{}	"服务器内部错误"
 //	@Router			/announcement/latest [get]
 func GetLatestAnnouncement() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -165,10 +164,12 @@ func GetLatestAnnouncement() gin.HandlerFunc {
 			return
 		}
 
+		
 		if announcement == nil {
-			c.JSON(http.StatusNotFound, gin.H{
-				"status":  "error",
-				"message": "没有找到公告",
+			c.JSON(http.StatusOK, gin.H{
+				"status":  "success",
+				"message": "没有找到当前有效的公告",
+				"data":    nil,
 			})
 			return
 		}
