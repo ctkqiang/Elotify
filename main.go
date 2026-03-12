@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	Addr = ":8080"
-	Port = 8080
+	Addr = ":8082"
+	Port = 8082
 )
 
 // @title			推送通知服务

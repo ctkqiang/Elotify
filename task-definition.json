@@ -69,7 +69,7 @@
       "environment": [
         {
           "name": "PORT",
-          "value": "80"
+          "value": "8082"
         },
         {
           "name": "MONGODB_URI",

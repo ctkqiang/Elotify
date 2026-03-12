@@ -36,7 +36,7 @@ func StandardPushNotification(router *gin.Engine) {
 //	@Failure		400				{object}	map[string]interface{}			"请求参数错误"
 //	@Failure		500				{object}	map[string]interface{}			"服务器内部错误"
 //	@Router			/push/text [post]
-//	@Example		curl -X POST http://localhost:8080/push/text \
+//	@Example		curl -X POST http://localhost:8082/push/text \
 //	@Example		-H "Content-Type: application/json" \
 //	@Example		-d '{"title": "测试通知", "message": "这是一条测试通知"}'
 func SendTextPushNotification() gin.HandlerFunc {
@@ -90,7 +90,7 @@ func SendTextPushNotification() gin.HandlerFunc {
 //	@Failure		400				{object}	map[string]interface{}			"请求参数错误"
 //	@Failure		500				{object}	map[string]interface{}			"服务器内部错误"
 //	@Router			/push/text-image [post]
-//	@Example		curl -X POST http://localhost:8080/push/text-image \
+//	@Example		curl -X POST http://localhost:8082/push/text-image \
 //	@Example		-H "Content-Type: application/json" \
 //	@Example		-d '{"title": "测试通知", "message": "这是一条包含图片的测试通知", "image_url": "https://example.com/image.jpg"}'
 func SendTextAndImagePushNotification() gin.HandlerFunc {

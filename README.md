@@ -90,7 +90,7 @@ docker-compose up -d
 服务启动后，可以通过以下地址访问 Swagger API 文档：
 
 ```
-http://localhost:8080/swagger/index.html
+http://localhost:8082/swagger/index.html
 ```
 
 ## API 端点详解
@@ -122,7 +122,7 @@ http://localhost:8080/swagger/index.html
 
 **cURL 示例**:
 ```bash
-curl -X POST http://localhost:8080/push/text \
+curl -X POST http://localhost:8082/push/text \
   -H "Content-Type: application/json" \
   -d '{
     "title": "系统维护通知",
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8080/push/text \
 
 **cURL 示例**:
 ```bash
-curl -X POST http://localhost:8080/push/text-image \
+curl -X POST http://localhost:8082/push/text-image \
   -H "Content-Type: application/json" \
   -d '{
     "title": "新功能发布",
@@ -186,7 +186,7 @@ curl -X POST http://localhost:8080/push/text-image \
 
 **cURL 示例**:
 ```bash
-curl -X POST http://localhost:8080/announcement/create \
+curl -X POST http://localhost:8082/announcement/create \
   -H "Content-Type: application/json" \
   -d '{
     "id": "maint_20240115",
@@ -208,7 +208,7 @@ curl -X POST http://localhost:8080/announcement/create \
 
 **cURL 示例**:
 ```bash
-curl -X DELETE "http://localhost:8080/announcement/delete?id=maint_20240115"
+curl -X DELETE "http://localhost:8082/announcement/delete?id=maint_20240115"
 ```
 
 #### 5. 获取最新公告
@@ -219,7 +219,7 @@ curl -X DELETE "http://localhost:8080/announcement/delete?id=maint_20240115"
 
 **cURL 示例**:
 ```bash
-curl -X GET http://localhost:8080/announcement/latest
+curl -X GET http://localhost:8082/announcement/latest
 ```
 
 #### 6. 更新公告
@@ -234,7 +234,7 @@ curl -X GET http://localhost:8080/announcement/latest
 
 **cURL 示例**:
 ```bash
-curl -X PUT "http://localhost:8080/announcement/update?id=maint_20240115" \
+curl -X PUT "http://localhost:8082/announcement/update?id=maint_20240115" \
   -H "Content-Type: application/json" \
   -d '{
     "id": "maint_20240115",
@@ -254,7 +254,7 @@ curl -X PUT "http://localhost:8080/announcement/update?id=maint_20240115" \
 
 **cURL 示例**:
 ```bash
-curl -X GET http://localhost:8080/announcement/all
+curl -X GET http://localhost:8082/announcement/all
 ```
 
 ### 分段管理 API
@@ -267,7 +267,7 @@ curl -X GET http://localhost:8080/announcement/all
 
 **cURL 示例**:
 ```bash
-curl -X GET http://localhost:8080/segment/all
+curl -X GET http://localhost:8082/segment/all
 ```
 
 ## 安全特性

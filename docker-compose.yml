@@ -25,7 +25,7 @@ services:
   pushservice:
     build: .
     ports:
-      - "8080:8080"
+      - "8082:8080"
     env_file:
       - .env
     environment:
@@ -45,7 +45,7 @@ services:
           "--quiet",
           "--tries=1",
           "--spider",
-          "http://127.0.0.1:8080/swagger/index.html",
+          "http://127.0.0.1:8082/swagger/index.html",
         ]
       interval: 30s
       timeout: 10s
