@@ -227,6 +227,7 @@ func GetLatestAdvertisement() gin.HandlerFunc {
 func GetAllAdvertisements() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		locale := c.Query("locale")
+		showAll := c.Query("show_all") == "true"
 
 		if locale != "" && locale != "zh" && locale != "en" {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -236,7 +237,7 @@ func GetAllAdvertisements() gin.HandlerFunc {
 			return
 		}
 
-		advertisements, err := repositories.GetAllAdvertisements(locale, true)
+		advertisements, err := repositories.GetAllAdvertisements(locale, showAll)
 		if err != nil {
 			utilities.Log(utilities.ERROR, "获取广告列表失败: %s", err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
