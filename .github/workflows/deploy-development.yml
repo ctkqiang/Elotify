@@ -1,105 +1,128 @@
 name: Deploy to Development (AWS ECR)
 
 on:
-    push:
-        tags:
-            - "v*-rc*"
-    workflow_dispatch:
+  push:
+    tags:
+      - "v*-rc*"
+  workflow_dispatch:
 env:
-    APP_NAME: ${{ secrets.APP_NAME_DEV }}
-    VERSION: ${{ github.ref }}
-    ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_DEV }}
-    AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+  APP_NAME: ${{ secrets.APP_NAME_DEV }}
+  VERSION: ${{ github.ref }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_DEV }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
 
 jobs:
-    unit_tests:
-        name: QA Testsing before deployment
-        runs-on: ubuntu-latest
+  unit_tests:
+    name: QA Testsing before deployment
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Run Unit Tests
-              continue-on-error: true
-              run: |
-                  go test ./...
+      - name: Run Unit Tests
+        continue-on-error: true
+        run: |
+          go test ./...
 
-            - name: IS Qualified to Deploy
-              continue-on-error: false
-              run: |
-                  echo "Scanning for hardcoded secrets..."
-                  PATTERNS=(
-                      'api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-                      'api[_-]?secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-                      'password\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
-                      'passwd\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
-                      'secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-                      'token\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-                      'access[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-                      'private[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-+/]{20,}["'"'"']'
-                      'BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY'
-                      'Authorization\s*[:=]\s*["'"'"']*Bearer\s+[A-Za-z0-9_\-\.]{10,}'
-                      'ghp_[A-Za-z0-9]{36}'
-                      'ghs_[A-Za-z0-9]{36}'
-                      'AKIA[0-9A-Z]{16}'
-                      'xox[bprs]-[A-Za-z0-9-]+'
-                  )
-                  FOUND=0
-                  for pattern in "${PATTERNS[@]}"; do
-                      MATCHES=$(grep -rIn --include="*.ts" -E "$pattern" . 2>/dev/null || true)
-                      if [ -n "$MATCHES" ]; then
-                      echo "::error::Hardcoded secret detected:"
-                      echo "$MATCHES"
-                      FOUND=1
-                      fi
-                  done
-                  if [ "$FOUND" -eq 1 ]; then
-                      echo "::error::Security scan failed - remove hardcoded secrets before deployment"
-                      exit 1
-                  fi
-                  echo "Security scan passed. Qualified for deployment."
+      - name: IS Qualified to Deploy
+        continue-on-error: false
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          PATTERNS=(
+              'api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+              'api[_-]?secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+              'password\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+              'passwd\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+              'secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+              'token\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+              'access[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+              'private[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-+/]{20,}["'"'"']'
+              'BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY'
+              'Authorization\s*[:=]\s*["'"'"']*Bearer\s+[A-Za-z0-9_\-\.]{10,}'
+              'ghp_[A-Za-z0-9]{36}'
+              'ghs_[A-Za-z0-9]{36}'
+              'AKIA[0-9A-Z]{16}'
+              'xox[bprs]-[A-Za-z0-9-]+'
+          )
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+              MATCHES=$(grep -rIn --include="*.ts" -E "$pattern" . 2>/dev/null || true)
+              if [ -n "$MATCHES" ]; then
+              echo "::error::Hardcoded secret detected:"
+              echo "$MATCHES"
+              FOUND=1
+              fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+              echo "::error::Security scan failed - remove hardcoded secrets before deployment"
+              exit 1
+          fi
+          echo "Security scan passed. Qualified for deployment."
 
-    deploy:
-        name: Deploy to Development (AWS ECR)
-        runs-on: ubuntu-latest
+  deploy:
+    name: Deploy to Development (AWS ECR)
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Configure AWS Credentials
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
-                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-                  aws-region: ${{ secrets.AWS_REGION_DEV }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION_DEV }}
 
-            - name: Proceed to authenticate to Amazon ECR
-              id: login-ecr
-              uses: aws-actions/amazon-ecr-login@v2
+      - name: Proceed to authenticate to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-            - name: Ensure ECR repository exists
-              run: |
-                  aws ecr describe-repositories --repository-names $ECR_REPOSITORY 2>/dev/null \
-                    || aws ecr create-repository --repository-name $ECR_REPOSITORY \
-                        --image-tag-mutability MUTABLE \
-                        --image-scanning-configuration scanOnPush=true
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPOSITORY 2>/dev/null \
+            || aws ecr create-repository --repository-name $ECR_REPOSITORY \
+                --image-tag-mutability MUTABLE \
+                --image-scanning-configuration scanOnPush=true
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Generate .env
+        run: |
+          cat > .env << 'ENVEOF'
+          APP_NAME=${{ secrets.APP_NAME_DEV }}
+          NODE_ENV=development
+          PORT=3000
 
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
+          POSTGRES_USER=${{ secrets.POSTGRES_USER_DEV }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_DEV }}
+          POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE }}
+          POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+          DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER_DEV }}:${{ secrets.POSTGRES_PASSWORD_DEV }}@postgres:${{ secrets.POSTGRES_PORT}}/${{ secrets.POSTGRES_DATABASE}}
 
-            - name: Build and Push multi-arch image to Amazon ECR
-              env:
-                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                  IMAGE_TAG: ${{ github.sha }}
-              run: |
-                  docker buildx build \
-                    --platform linux/amd64,linux/arm64 \
-                    -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-                    -t $ECR_REGISTRY/$ECR_REPOSITORY:dev \
-                    --push \
-                    .
+          JWT_SECRET=dev-secret-key-change-in-production
+          JWT_EXPIRY=24h
+
+          VAPID_PUBLIC_KEY=your-vapid-public-key
+          VAPID_PRIVATE_KEY=your-vapid-private-key
+          VAPID_SUBJECT=mailto:admin@example.com
+
+          LOG_LEVEL=info
+          ENVEOF
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build and Push multi-arch image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:dev \
+            --push \
+            .

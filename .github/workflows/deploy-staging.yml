@@ -86,6 +86,29 @@ jobs:
                         --image-tag-mutability MUTABLE \
                         --image-scanning-configuration scanOnPush=true
 
+            - name: Generate .env
+              run: |
+                  cat > .env << 'ENVEOF'
+                  APP_NAME=${{ secrets.APP_NAME_STAG }}
+                  NODE_ENV=staging
+                  PORT=${{ secrets.PORT_STAG }}
+
+                  POSTGRES_USER=${{ secrets.POSTGRES_USER_STAG }}
+                  POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_STAG }}
+                  POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE_STAG }}
+                  POSTGRES_PORT=${{ secrets.POSTGRES_PORT_STAG }}
+                  DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER_STAG }}:${{ secrets.POSTGRES_PASSWORD_STAG }}@postgres:${{ secrets.POSTGRES_PORT_STAG }}/${{ secrets.POSTGRES_DATABASE_STAG }}
+
+                  JWT_SECRET=${{ secrets.JWT_SECRET_STAG }}
+                  JWT_EXPIRY=${{ secrets.JWT_EXPIRY_STAG }}
+
+                  VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY_STAG }}
+                  VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY_STAG }}
+                  VAPID_SUBJECT=${{ secrets.VAPID_SUBJECT_STAG }}
+
+                  LOG_LEVEL=${{ secrets.LOG_LEVEL_STAG }}
+                  ENVEOF
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
