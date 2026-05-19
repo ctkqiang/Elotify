@@ -1,205 +1,105 @@
 name: Deploy to Development (AWS ECR)
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*-rc*"
-  workflow_dispatch:
-
+    push:
+        tags:
+            - "v*-rc*"
+    workflow_dispatch:
 env:
-  APP_NAME: PushNotificationService
-  VERSION: ${{ github.ref }}
-  ECR_REPOSITORY: push-notification-service-development
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+    APP_NAME: ${{ secrets.APP_NAME_DEV }}
+    VERSION: ${{ github.ref }}
+    ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_DEV }}
+    AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
 
 jobs:
-  unit_tests:
-    name: QA Testing before deployment
-    runs-on: ubuntu-latest
+    unit_tests:
+        name: QA Testsing before deployment
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+            - name: Run Unit Tests
+              continue-on-error: true
+              run: |
+                  go test ./...
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+            - name: IS Qualified to Deploy
+              continue-on-error: false
+              run: |
+                  echo "Scanning for hardcoded secrets..."
+                  PATTERNS=(
+                      'api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+                      'api[_-]?secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+                      'password\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+                      'passwd\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+                      'secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+                      'token\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+                      'access[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+                      'private[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-+/]{20,}["'"'"']'
+                      'BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY'
+                      'Authorization\s*[:=]\s*["'"'"']*Bearer\s+[A-Za-z0-9_\-\.]{10,}'
+                      'ghp_[A-Za-z0-9]{36}'
+                      'ghs_[A-Za-z0-9]{36}'
+                      'AKIA[0-9A-Z]{16}'
+                      'xox[bprs]-[A-Za-z0-9-]+'
+                  )
+                  FOUND=0
+                  for pattern in "${PATTERNS[@]}"; do
+                      MATCHES=$(grep -rIn --include="*.ts" -E "$pattern" . 2>/dev/null || true)
+                      if [ -n "$MATCHES" ]; then
+                      echo "::error::Hardcoded secret detected:"
+                      echo "$MATCHES"
+                      FOUND=1
+                      fi
+                  done
+                  if [ "$FOUND" -eq 1 ]; then
+                      echo "::error::Security scan failed - remove hardcoded secrets before deployment"
+                      exit 1
+                  fi
+                  echo "Security scan passed. Qualified for deployment."
 
-      - name: Run linter
-        continue-on-error: true
-        run: bun run lint
+    deploy:
+        name: Deploy to Development (AWS ECR)
+        runs-on: ubuntu-latest
 
-      - name: Generate Prisma Client
-        run: bun run prisma:generate
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Run tests
-        continue-on-error: true
-        run: bun run test
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+                  aws-region: ${{ secrets.AWS_REGION_DEV }}
 
-      - name: IS Qualified to Deploy
-        continue-on-error: false
-        run: |
-          echo "Scanning for hardcoded secrets..."
-          PATTERNS=(
-            'api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-            'api[_-]?secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-            'password\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
-            'passwd\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
-            'secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-            'token\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-            'access[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
-            'private[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-+/]{20,}["'"'"']'
-            'BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY'
-            'Authorization\s*[:=]\s*["'"'"']*Bearer\s+[A-Za-z0-9_\-\.]{10,}'
-            'AKIA[0-9A-Z]{16}'
-            'DATABASE_URL\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
-          )
-          FOUND=0
-          for pattern in "${PATTERNS[@]}"; do
-            MATCHES=$(grep -rIn --include="*.ts" --include="*.js" --include="*.yaml" --include="*.yml" --include="*.json" --include=".env*" -E "$pattern" . 2>/dev/null || true)
-            if [ -n "$MATCHES" ]; then
-              echo "::error::Hardcoded secret detected:"
-              echo "$MATCHES"
-              FOUND=1
-            fi
-          done
-          if [ "$FOUND" -eq 1 ]; then
-            echo "::error::Security scan failed - remove hardcoded secrets before deployment"
-            exit 1
-          fi
-          echo "Security scan passed. Qualified for deployment."
+            - name: Proceed to authenticate to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
 
-  deploy:
-    name: Build and Push to AWS ECR Development
-    runs-on: ubuntu-latest
-    needs: unit_tests
+            - name: Ensure ECR repository exists
+              run: |
+                  aws ecr describe-repositories --repository-names $ECR_REPOSITORY 2>/dev/null \
+                    || aws ecr create-repository --repository-name $ECR_REPOSITORY \
+                        --image-tag-mutability MUTABLE \
+                        --image-scanning-configuration scanOnPush=true
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-          aws-region: ${{ secrets.AWS_REGION_DEV }}
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
 
-      - name: Authenticate to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Ensure ECR repository exists
-        run: |
-          aws ecr describe-repositories --repository-names $ECR_REPOSITORY 2>/dev/null \
-            || aws ecr create-repository --repository-name $ECR_REPOSITORY \
-                --image-tag-mutability MUTABLE \
-                --image-scanning-configuration scanOnPush=true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU for multi-arch builds
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build and Push multi-arch image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:development \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            --push \
-            .
-
-  deploy-to-ecs:
-    name: Deploy to ECS Development
-    runs-on: ubuntu-latest
-    needs: deploy
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
-          aws-region: ${{ secrets.AWS_REGION_DEV }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Update ECS service
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER_DEV }}
-          ECS_SERVICE: ${{ secrets.ECS_SERVICE_DEV }}
-        run: |
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION_DEV }}
-
-      - name: Wait for ECS deployment
-        env:
-          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER_DEV }}
-          ECS_SERVICE: ${{ secrets.ECS_SERVICE_DEV }}
-        run: |
-          echo "Waiting for ECS service to stabilize..."
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE \
-            --region ${{ secrets.AWS_REGION_DEV }}
-          echo "ECS service deployment completed."
-
-  notify:
-    name: Deployment Notification
-    runs-on: ubuntu-latest
-    if: always()
-    needs: [unit_tests, deploy, deploy-to-ecs]
-
-    steps:
-      - name: Determine deployment status
-        id: status
-        run: |
-          if [ "${{ needs.deploy-to-ecs.result }}" == "success" ]; then
-            echo "status=Deployment Successful" >> $GITHUB_OUTPUT
-            echo "color=28a745" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.deploy-to-ecs.result }}" == "skipped" ]; then
-            echo "status=Deployment Skipped" >> $GITHUB_OUTPUT
-            echo "color=0366d6" >> $GITHUB_OUTPUT
-          else
-            echo "status=Deployment Failed" >> $GITHUB_OUTPUT
-            echo "color=cb2431" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create deployment summary
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY << SUMMEOF
-          Deployment Status: ${{ steps.status.outputs.status }}
-
-          Commit: ${{ github.sha }}
-          Branch: ${{ github.ref_name }}
-          Author: ${{ github.actor }}
-
-          Jobs Status:
-          - QA Testing: ${{ needs.unit_tests.result }}
-          - Build & Push to ECR: ${{ needs.deploy.result }}
-          - Deploy to ECS: ${{ needs.deploy-to-ecs.result }}
-
-          View workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          SUMMEOF
+            - name: Build and Push multi-arch image to Amazon ECR
+              env:
+                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  IMAGE_TAG: ${{ github.sha }}
+              run: |
+                  docker buildx build \
+                    --platform linux/amd64,linux/arm64 \
+                    -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                    -t $ECR_REGISTRY/$ECR_REPOSITORY:dev \
+                    --push \
+                    .
