@@ -1,0 +1,308 @@
+{
+  "info": {
+    "name": "Push Notification Service API",
+    "description": "Complete API collection for ValuFarm Push Notification Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the service is running and healthy"
+          },
+          "response": []
+        },
+        {
+          "name": "Root Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Get service information and status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Push Notifications",
+      "item": [
+        {
+          "name": "Push to All Users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-super",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title_identifier\": \"maintenance_alert\",\n  \"locale_contents\": {\n    \"en\": {\n      \"title\": \"System Maintenance\",\n      \"body\": \"System will be down for 2 hours\",\n      \"icon_url\": \"https://example.com/icon.png\",\n      \"action_url\": \"https://example.com/status\"\n    },\n    \"zh\": {\n      \"title\": \"系统维护\",\n      \"body\": \"系统将停机2小时\"\n    }\n  },\n  \"scheduled_at\": \"2026-05-20T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/push/all",
+              "host": ["{{base_url}}"],
+              "path": ["push", "all"]
+            },
+            "description": "Send push notification to all active users (SUPER_ADMIN only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Push to Specific User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title_identifier\": \"order_update\",\n  \"locale_contents\": {\n    \"en\": {\n      \"title\": \"Order Shipped\",\n      \"body\": \"Your order has been shipped\",\n      \"action_url\": \"https://example.com/orders/123\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/push/user/user-123",
+              "host": ["{{base_url}}"],
+              "path": ["push", "user", "user-123"]
+            },
+            "description": "Send push notification to a specific user (SUPER_ADMIN or ADMIN)"
+          },
+          "response": []
+        },
+        {
+          "name": "Push to User Segment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title_identifier\": \"vip_offer\",\n  \"locale_contents\": {\n    \"en\": {\n      \"title\": \"Exclusive VIP Offer\",\n      \"body\": \"Get 50% off premium features\",\n      \"action_url\": \"https://example.com/vip\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/push/group/segment-vip",
+              "host": ["{{base_url}}"],
+              "path": ["push", "group", "segment-vip"]
+            },
+            "description": "Send push notification to a user segment/group (SUPER_ADMIN or ADMIN)"
+          },
+          "response": []
+        },
+        {
+          "name": "Push to Topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title_identifier\": \"product_update\",\n  \"locale_contents\": {\n    \"en\": {\n      \"title\": \"New Product Available\",\n      \"body\": \"Check out our latest product\",\n      \"action_url\": \"https://example.com/products/new\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/push/topic/topic-products",
+              "host": ["{{base_url}}"],
+              "path": ["push", "topic", "topic-products"]
+            },
+            "description": "Send push notification to topic subscribers (SUPER_ADMIN or ADMIN)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Get Notifications",
+      "item": [
+        {
+          "name": "Get Latest Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notification/latest",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "latest"]
+            },
+            "description": "Get the latest 10 campaigns (no authentication required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notification/user/user-123",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "user", "user-123"]
+            },
+            "description": "Get all notifications for a specific user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Segment Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notification/group/segment-vip",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "group", "segment-vip"]
+            },
+            "description": "Get all notifications for a user segment"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Topic Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-regular",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notification/topic/topic-products",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "topic", "topic-products"]
+            },
+            "description": "Get all notifications for a topic"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Update Notifications",
+      "item": [
+        {
+          "name": "Update Notification Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-super",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SENDING\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notification/550e8400-e29b-41d4-a716-446655440000",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "550e8400-e29b-41d4-a716-446655440000"]
+            },
+            "description": "Update notification status (SUPER_ADMIN only). Valid statuses: DRAFT, QUEUED, SENDING, COMPLETED, FAILED"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Delete Notifications",
+      "item": [
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer admin-token-super",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notification/550e8400-e29b-41d4-a716-446655440000",
+              "host": ["{{base_url}}"],
+              "path": ["notification", "550e8400-e29b-41d4-a716-446655440000"]
+            },
+            "description": "Delete a notification (SUPER_ADMIN only)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
