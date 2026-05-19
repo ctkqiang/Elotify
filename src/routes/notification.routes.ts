@@ -306,13 +306,31 @@ export function setupNotificationRoutes(app: Elysia) {
         };
       }
 
+      const validBrowsers = ['CHROME', 'FIREFOX', 'SAFARI', 'EDGE'];
+      if (!validBrowsers.includes(browser)) {
+        set.status = 400;
+        return {
+          error: 'Bad Request',
+          message: `Invalid browser: ${browser}. Must be one of: ${validBrowsers.join(', ')}`,
+          status_code: 400
+        };
+      }
+
+      logger.info('Creating subscription', 'CREATE_SUB', { user_id, browser, endpoint });
+
       const subscription = await subscriptionModel.create(
         user_id,
-        browser,
+        browser as any,
         endpoint,
         p256dh_key,
         auth_key
       );
+
+      logger.info('Subscription created successfully', 'CREATE_SUB', {
+        id: subscription.id,
+        userId: subscription.userId,
+        browser: subscription.browser
+      });
 
       logger.info('Subscription created', 'CREATE_SUB', {
         subscriptionId: subscription.id,
