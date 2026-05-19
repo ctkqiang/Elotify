@@ -21,13 +21,13 @@ export class NotificationLogModel {
         httpStatusCode: httpStatusCode || undefined,
         errorMessage: errorMessage || undefined
       }
-    }) as Promise<NotificationLog>;
+    });
   }
 
   async getById(id: string): Promise<NotificationLog | null> {
     return db.notificationLog.findUnique({
       where: { id }
-    }) as Promise<NotificationLog | null>;
+    });
   }
 
   async updateStatus(
@@ -43,7 +43,7 @@ export class NotificationLogModel {
         httpStatusCode: httpStatusCode || undefined,
         errorMessage: errorMessage || undefined
       }
-    }) as Promise<NotificationLog>;
+    });
   }
 
   async getByCampaignId(campaignId: string, limit = 100): Promise<NotificationLog[]> {
@@ -51,7 +51,7 @@ export class NotificationLogModel {
       where: { campaignId },
       take: limit,
       orderBy: { createdAt: 'desc' }
-    }) as Promise<NotificationLog[]>;
+    });
   }
 
   async getByUserId(userId: string, limit = 50): Promise<NotificationLog[]> {
@@ -59,7 +59,7 @@ export class NotificationLogModel {
       where: { userId },
       take: limit,
       orderBy: { createdAt: 'desc' }
-    }) as Promise<NotificationLog[]>;
+    });
   }
 
   async getStatsByCampaign(campaignId: string): Promise<{
