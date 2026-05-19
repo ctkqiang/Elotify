@@ -145,12 +145,14 @@ export function setupNotificationRoutes(app: Elysia) {
 
       set.status = 201;
       logger.logOperation('PUSH_TO_USER', result.campaign_id, 'SUCCESS', 0, {
-        userId: params.user_id
+        userId: params.user_id,
+        totalSubscribers: result.total_subscribers
       });
 
       return {
         campaign_id: result.campaign_id,
         user_id: params.user_id,
+        total_subscribers: result.total_subscribers,
         timestamp: new Date().toISOString()
       };
     } catch (error) {
