@@ -1,27 +1,27 @@
-name: Deploy to Development
+name: Deploy to Development (AWS ECR)
 
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*-rc*"
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  APP_NAME: PushNotificationService
+  VERSION: ${{ github.ref }}
+  ECR_REPOSITORY: push-notification-service-development
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
 
 jobs:
-  build-and-test:
+  unit_tests:
+    name: QA Testing before deployment
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v1
@@ -32,179 +32,174 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run linter
-        run: bun run lint || true
+        continue-on-error: true
+        run: bun run lint
 
       - name: Generate Prisma Client
         run: bun run prisma:generate
 
       - name: Run tests
-        run: bun run test || true
         continue-on-error: true
+        run: bun run test
 
-      - name: Build application
-        run: bun run build || echo "No build script defined"
+      - name: IS Qualified to Deploy
+        continue-on-error: false
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          PATTERNS=(
+            'api[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+            'api[_-]?secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+            'password\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+            'passwd\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+            'secret\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+            'token\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+            'access[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-]{8,}["'"'"']'
+            'private[_-]?key\s*[:=]\s*["'"'"'][A-Za-z0-9_\-+/]{20,}["'"'"']'
+            'BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY'
+            'Authorization\s*[:=]\s*["'"'"']*Bearer\s+[A-Za-z0-9_\-\.]{10,}'
+            'AKIA[0-9A-Z]{16}'
+            'DATABASE_URL\s*[:=]\s*["'"'"'][^"'"'"']+["'"'"']'
+          )
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -rIn --include="*.ts" --include="*.js" --include="*.yaml" --include="*.yml" --include="*.json" --include=".env*" -E "$pattern" . 2>/dev/null || true)
+            if [ -n "$MATCHES" ]; then
+              echo "::error::Hardcoded secret detected:"
+              echo "$MATCHES"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "::error::Security scan failed - remove hardcoded secrets before deployment"
+            exit 1
+          fi
+          echo "Security scan passed. Qualified for deployment."
 
-  docker-build-push:
-    needs: build-and-test
+  deploy:
+    name: Build and Push to AWS ECR Development
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    needs: unit_tests
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION_DEV }}
+
+      - name: Authenticate to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPOSITORY 2>/dev/null \
+            || aws ecr create-repository --repository-name $ECR_REPOSITORY \
+                --image-tag-mutability MUTABLE \
+                --image-scanning-configuration scanOnPush=true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=dev-latest
+      - name: Build and Push multi-arch image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:development \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            --push \
+            .
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    needs: docker-build-push
+  deploy-to-ecs:
+    name: Deploy to ECS Development
     runs-on: ubuntu-latest
-    environment: development
+    needs: deploy
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to development
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION_DEV }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update ECS service
         env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER_DEV }}
+          ECS_SERVICE: ${{ secrets.ECS_SERVICE_DEV }}
         run: |
-          if [ -z "$DEPLOY_KEY" ] || [ -z "$DEPLOY_HOST" ]; then
-            echo "⚠️  Deployment skipped: Missing deployment secrets"
-            echo "Configure DEPLOY_KEY and DEPLOY_HOST in GitHub repository settings"
-            exit 0
-          fi
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION_DEV }}
 
-          # Setup SSH
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${DEPLOY_PORT:-22} $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null
-
-          # Deploy
-          ssh -i ~/.ssh/deploy_key -p ${DEPLOY_PORT:-22} ${DEPLOY_USER}@${DEPLOY_HOST} << 'EOFSH'
-            cd /app/push-notification-service
-            docker-compose pull
-            docker-compose down
-            docker-compose up -d
-            docker-compose exec -T postgres psql -U postgres -d push_notifications << 'DBEOF'
-            INSERT INTO admins (id, name, username, role)
-            VALUES (0, 'Test Admin', 'test-admin', 'SUPER_ADMIN')
-            ON CONFLICT DO NOTHING;
-
-            INSERT INTO locales (id, name)
-            VALUES ('en', 'English'), ('zh', 'Chinese'), ('ms', 'Malay')
-            ON CONFLICT DO NOTHING;
-            DBEOF
-          EOFSH
-
-          rm ~/.ssh/deploy_key
-
-      - name: Health check
-        if: always()
+      - name: Wait for ECS deployment
+        env:
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER_DEV }}
+          ECS_SERVICE: ${{ secrets.ECS_SERVICE_DEV }}
         run: |
-          echo "Waiting for service to be healthy..."
-          for i in {1..30}; do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
-              echo "✅ Service is healthy"
-              exit 0
-            fi
-            echo "Attempt $i/30... waiting"
-            sleep 2
-          done
-          echo "⚠️  Service health check timeout"
-          exit 1
-        continue-on-error: true
+          echo "Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE \
+            --region ${{ secrets.AWS_REGION_DEV }}
+          echo "ECS service deployment completed."
 
   notify:
-    needs: [build-and-test, docker-build-push, deploy]
+    name: Deployment Notification
     runs-on: ubuntu-latest
     if: always()
+    needs: [unit_tests, deploy, deploy-to-ecs]
 
     steps:
       - name: Determine deployment status
         id: status
         run: |
-          if [ "${{ needs.deploy.result }}" == "success" ]; then
-            echo "status=✅ Deployment Successful" >> $GITHUB_OUTPUT
+          if [ "${{ needs.deploy-to-ecs.result }}" == "success" ]; then
+            echo "status=Deployment Successful" >> $GITHUB_OUTPUT
             echo "color=28a745" >> $GITHUB_OUTPUT
-          elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
-            echo "status=ℹ️  Deployment Skipped" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-to-ecs.result }}" == "skipped" ]; then
+            echo "status=Deployment Skipped" >> $GITHUB_OUTPUT
             echo "color=0366d6" >> $GITHUB_OUTPUT
           else
-            echo "status=❌ Deployment Failed" >> $GITHUB_OUTPUT
+            echo "status=Deployment Failed" >> $GITHUB_OUTPUT
             echo "color=cb2431" >> $GITHUB_OUTPUT
           fi
 
       - name: Create deployment summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY << SUMMEOF
-          ## ${{ steps.status.outputs.status }}
+          Deployment Status: ${{ steps.status.outputs.status }}
 
-          **Commit**: ${{ github.sha }}
-          **Branch**: ${{ github.ref_name }}
-          **Author**: ${{ github.actor }}
+          Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+          Author: ${{ github.actor }}
 
-          ### Jobs Status
-          - **Build & Test**: ${{ needs.build-and-test.result }}
-          - **Docker Build & Push**: ${{ needs.docker-build-push.result }}
-          - **Deploy**: ${{ needs.deploy.result }}
+          Jobs Status:
+          - QA Testing: ${{ needs.unit_tests.result }}
+          - Build & Push to ECR: ${{ needs.deploy.result }}
+          - Deploy to ECS: ${{ needs.deploy-to-ecs.result }}
 
-          [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          View workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SUMMEOF
-
-  cleanup:
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Clean up old images
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const res = await github.rest.packages.getAllPackageVersionsForPackageOwnedByAuthenticatedUser({
-              package_type: 'container',
-              package_name: 'push-notification-service',
-            });
-
-            const toDelete = res.data.slice(5);
-            for (const pkg of toDelete) {
-              await github.rest.packages.deletePackageVersionForAuthenticatedUser({
-                package_type: 'container',
-                package_name: 'push-notification-service',
-                package_version_id: pkg.id,
-              });
-            }
-        continue-on-error: true
