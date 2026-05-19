@@ -272,7 +272,7 @@ export class PushNotificationViewModel {
       await this.logModel.create(
         campaignId,
         subscription.id,
-        subscription.user_id,
+        subscription.userId,
         adminId,
         LogStatus.QUEUED
       );
