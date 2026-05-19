@@ -314,6 +314,13 @@ export function setupNotificationRoutes(app: Elysia) {
         auth_key
       );
 
+      logger.info('Subscription created', 'CREATE_SUB', {
+        subscriptionId: subscription.id,
+        userId: subscription.userId,
+        browser: subscription.browser,
+        isActive: subscription.isActive
+      });
+
       set.status = 201;
       logger.logOperation('CREATE_SUB', subscription.id, 'SUCCESS', 0, {
         userId: user_id,

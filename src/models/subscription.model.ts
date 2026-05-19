@@ -9,7 +9,8 @@ export class SubscriptionModel {
     p256dhKey: string,
     authKey: string
   ): Promise<WebPushSubscription> {
-    return db.webPushSubscription.create({
+    console.log('[SubscriptionModel.create] Creating subscription:', { userId, browser, endpoint });
+    const result = await db.webPushSubscription.create({
       data: {
         userId,
         browser,
@@ -19,6 +20,8 @@ export class SubscriptionModel {
         isActive: true
       }
     });
+    console.log('[SubscriptionModel.create] Created:', { id: result.id, userId: result.userId });
+    return result;
   }
 
   async getById(id: string): Promise<WebPushSubscription | null> {
