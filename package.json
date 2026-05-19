@@ -9,13 +9,14 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "elysia": "latest",
-    "@prisma/client": "latest",
-    "dotenv": "latest"
+    "@prisma/client": "5.20.0",
+    "dotenv": "latest",
+    "elysia": "latest"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "prisma": "latest"
+    "prisma": "5.20.0",
+    "typescript": "^6.0.3"
   },
   "module": "src/index.js"
 }
