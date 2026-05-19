@@ -2,6 +2,10 @@
 
 A production-grade push notification service built with **ElysiaJS**, **TypeScript**, **Prisma ORM**, and **MVVM architecture** for delivering web push notifications at scale.
 
+## Database Notice
+
+**IMPORTANT: This service uses REAL PostgreSQL database** - All API responses return actual data persisted in the database, NOT mock data. Every request to create, read, update, or delete notifications operates on real data in PostgreSQL. You can verify by querying the database directly or importing the Postman collection and seeing live data from your database.
+
 ## Features
 
 ### Push Notification Capabilities

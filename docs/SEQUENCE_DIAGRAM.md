@@ -6,6 +6,8 @@
 
 This diagram illustrates the complete execution flow of a single push notification request from client submission through database persistence. It demonstrates how each layer of the MVVM architecture interacts and the order of operations.
 
+**Important:** Every step in this sequence performs REAL database operations. Data is persisted in PostgreSQL, not mocked. The final response contains actual data stored in the database.
+
 ## Detailed Flow Breakdown
 
 ### 1. Client Request (Entry Point)

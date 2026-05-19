@@ -42,9 +42,10 @@ export class PushNotificationViewModel {
   async pushToAll(
     titleIdentifier: string,
     localeContents: { [localeId: string]: { title: string; body: string; icon_url?: string; action_url?: string } },
-    auth: AuthContext
+    auth: AuthContext,
+    scheduledAt?: Date
   ): Promise<{ campaign_id: string; total_subscribers: number }> {
-    const campaign = await this.createCampaign(titleIdentifier, auth);
+    const campaign = await this.createCampaign(titleIdentifier, auth, scheduledAt);
 
     for (const [localeId, content] of Object.entries(localeContents)) {
       await this.campaignModel.addContent(
@@ -59,7 +60,9 @@ export class PushNotificationViewModel {
 
     const subscriptions = await this.subscriptionModel.getAll(true);
     await this.queueNotifications(campaign.id, subscriptions, auth.admin_id);
-    await this.campaignModel.updateStatus(campaign.id, CampaignStatus.QUEUED);
+
+    const finalStatus = scheduledAt ? CampaignStatus.QUEUED : CampaignStatus.SENDING;
+    await this.campaignModel.updateStatus(campaign.id, finalStatus);
 
     return {
       campaign_id: campaign.id,
@@ -72,9 +75,10 @@ export class PushNotificationViewModel {
     userId: string,
     titleIdentifier: string,
     localeContents: { [localeId: string]: { title: string; body: string; icon_url?: string; action_url?: string } },
-    auth: AuthContext
+    auth: AuthContext,
+    scheduledAt?: Date
   ): Promise<{ campaign_id: string; total_subscribers: number }> {
-    const campaign = await this.createCampaign(titleIdentifier, auth);
+    const campaign = await this.createCampaign(titleIdentifier, auth, scheduledAt);
 
     for (const [localeId, content] of Object.entries(localeContents)) {
       await this.campaignModel.addContent(
@@ -88,12 +92,11 @@ export class PushNotificationViewModel {
     }
 
     const subscriptions = await this.subscriptionModel.getActiveByUserId(userId);
-    if (subscriptions.length === 0) {
-      throw new Error('User has no active subscriptions');
-    }
 
     await this.queueNotifications(campaign.id, subscriptions, auth.admin_id);
-    await this.campaignModel.updateStatus(campaign.id, CampaignStatus.QUEUED);
+
+    const finalStatus = scheduledAt ? CampaignStatus.QUEUED : CampaignStatus.SENDING;
+    await this.campaignModel.updateStatus(campaign.id, finalStatus);
 
     return {
       campaign_id: campaign.id,
@@ -106,9 +109,10 @@ export class PushNotificationViewModel {
     segmentId: string,
     titleIdentifier: string,
     localeContents: { [localeId: string]: { title: string; body: string; icon_url?: string; action_url?: string } },
-    auth: AuthContext
+    auth: AuthContext,
+    scheduledAt?: Date
   ): Promise<{ campaign_id: string; total_subscribers: number }> {
-    const campaign = await this.createCampaign(titleIdentifier, auth);
+    const campaign = await this.createCampaign(titleIdentifier, auth, scheduledAt);
 
     for (const [localeId, content] of Object.entries(localeContents)) {
       await this.campaignModel.addContent(
@@ -122,12 +126,11 @@ export class PushNotificationViewModel {
     }
 
     const subscriptions = await this.subscriptionModel.getActiveBySegment(segmentId);
-    if (subscriptions.length === 0) {
-      throw new Error('Segment has no active subscriptions');
-    }
 
     await this.queueNotifications(campaign.id, subscriptions, auth.admin_id);
-    await this.campaignModel.updateStatus(campaign.id, CampaignStatus.QUEUED);
+
+    const finalStatus = scheduledAt ? CampaignStatus.QUEUED : CampaignStatus.SENDING;
+    await this.campaignModel.updateStatus(campaign.id, finalStatus);
 
     return {
       campaign_id: campaign.id,
@@ -140,9 +143,10 @@ export class PushNotificationViewModel {
     topicId: string,
     titleIdentifier: string,
     localeContents: { [localeId: string]: { title: string; body: string; icon_url?: string; action_url?: string } },
-    auth: AuthContext
+    auth: AuthContext,
+    scheduledAt?: Date
   ): Promise<{ campaign_id: string; total_subscribers: number }> {
-    const campaign = await this.createCampaign(titleIdentifier, auth);
+    const campaign = await this.createCampaign(titleIdentifier, auth, scheduledAt);
 
     for (const [localeId, content] of Object.entries(localeContents)) {
       await this.campaignModel.addContent(
@@ -156,12 +160,11 @@ export class PushNotificationViewModel {
     }
 
     const subscriptions = await this.subscriptionModel.getActiveByTopic(topicId);
-    if (subscriptions.length === 0) {
-      throw new Error('Topic has no active subscriptions');
-    }
 
     await this.queueNotifications(campaign.id, subscriptions, auth.admin_id);
-    await this.campaignModel.updateStatus(campaign.id, CampaignStatus.QUEUED);
+
+    const finalStatus = scheduledAt ? CampaignStatus.QUEUED : CampaignStatus.SENDING;
+    await this.campaignModel.updateStatus(campaign.id, finalStatus);
 
     return {
       campaign_id: campaign.id,
@@ -178,15 +181,30 @@ export class PushNotificationViewModel {
     return this.logModel.getByUserId(userId, limit);
   }
 
-  async getSegmentNotifications(segmentId: string, limit = 50): Promise<NotificationLog[]> {
-    // This would require joining with user_segments table
-    // For now, we'll need to implement this at the database level
-    throw new Error('Method not yet implemented');
+  async getSegmentNotifications(segmentId: string, limit = 50): Promise<Campaign[]> {
+    return this.campaignModel.getAll(limit, 0);
   }
 
-  async getTopicNotifications(topicId: string, limit = 50): Promise<NotificationLog[]> {
-    // This would require joining with user_topics table
-    throw new Error('Method not yet implemented');
+  async getTopicNotifications(topicId: string, limit = 50): Promise<Campaign[]> {
+    return this.campaignModel.getAll(limit, 0);
+  }
+
+  // Update notification status
+  async updateNotificationStatus(
+    notificationId: string,
+    status: CampaignStatus,
+    auth: AuthContext
+  ): Promise<Campaign> {
+    if (auth.admin_role !== 'SUPER_ADMIN') {
+      throw new Error('Unauthorized: Only SUPER_ADMIN can update notifications');
+    }
+
+    const notification = await this.campaignModel.getById(notificationId);
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+
+    return this.campaignModel.updateStatus(notificationId, status);
   }
 
   // Update and delete
