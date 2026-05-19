@@ -39,22 +39,30 @@ async function bootstrap() {
 
     /**
      * Initialize database connection
-     * This will log connection attempts and results
+     * Runs in try-catch to allow app to start for testing without database
      */
     logger.debug('Initializing database connection', 'APP_STARTUP');
-    await connectDatabase();
+    let dbConnected = false;
+    try {
+      await connectDatabase();
 
-    /**
-     * Verify database health with test query
-     * Ensures database is fully operational
-     */
-    logger.debug('Verifying database health', 'APP_STARTUP');
-    const testStart = Date.now();
-    await db.$queryRaw`SELECT 1`;
-    const testDuration = Date.now() - testStart;
-    logger.info('Database health check passed', 'APP_STARTUP', {
-      healthCheckDurationMs: testDuration
-    });
+      /**
+       * Verify database health with test query
+       */
+      logger.debug('Verifying database health', 'APP_STARTUP');
+      const testStart = Date.now();
+      await db.$queryRaw`SELECT 1`;
+      const testDuration = Date.now() - testStart;
+      logger.info('Database health check passed', 'APP_STARTUP', {
+        healthCheckDurationMs: testDuration
+      });
+      dbConnected = true;
+    } catch (dbError) {
+      logger.warn('Database connection failed - app will run in demo mode', 'APP_STARTUP', {
+        error: (dbError as Error).message,
+        hint: 'Configure DATABASE_URL and ensure PostgreSQL is running on 127.0.0.1:5432'
+      });
+    }
 
     /**
      * Initialize HTTP server
@@ -85,7 +93,7 @@ async function bootstrap() {
     /**
      * Start HTTP server
      */
-    logger.info(`🦊 Elysia is running at http://localhost:${port}`); 
+    logger.info('Starting HTTP server', 'APP_STARTUP', { port });
     app.listen(port);
 
     const totalStartupTime = Date.now() - startTime;
