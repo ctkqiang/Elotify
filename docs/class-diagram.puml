@@ -1,0 +1,202 @@
+@startuml Push Notification Service - Class Diagram
+
+package "API Layer" {
+  class Elysia {
+    - app: Elysia
+    + post(path, handler): void
+    + get(path, handler): void
+    + put(path, handler): void
+    + delete(path, handler): void
+    + listen(port): void
+  }
+
+  class NotificationRoutes {
+    + setupNotificationRoutes(app): Elysia
+    + PostPushNotifications: Object
+    + GetPushNotifications: Object
+    + PutPushNotifications: Object
+    + DeletePushNotifications: Object
+  }
+}
+
+package "Middleware Layer" {
+  class AuthMiddleware {
+    + extractAuthContext(context): AuthContext
+    + requireRole(roles): Function
+    + verifyToken(token): AuthContext
+    - VALID_TOKENS: Map
+  }
+
+  class ValidationMiddleware {
+    + validatePushRequest(body): ValidatedRequest
+    + validateFields(data): void
+  }
+
+  class ErrorHandler {
+    + handleError(error): Response
+    + logError(error, context): void
+  }
+
+  class Logger {
+    + info(message, module, context): void
+    + debug(message, module): void
+    + warn(message, module, context): void
+    + error(message, error, module): void
+    + startRequest(requestId): void
+    + endRequest(): void
+  }
+}
+
+package "ViewModel Layer (Business Logic)" {
+  class PushNotificationViewModel {
+    - campaignModel: CampaignModel
+    - subscriptionModel: SubscriptionModel
+    - logModel: NotificationLogModel
+    + pushToAll(title, contents, auth, scheduled): Result
+    + pushToUser(userId, title, contents, auth, scheduled): Result
+    + pushToSegment(segmentId, title, contents, auth, scheduled): Result
+    + pushToTopic(topicId, title, contents, auth, scheduled): Result
+    + getLatestNotifications(limit): Campaign[]
+    + getUserNotifications(userId): NotificationLog[]
+    + getSegmentNotifications(segmentId): Campaign[]
+    + getTopicNotifications(topicId): Campaign[]
+    + updateNotificationStatus(id, status, auth): Campaign
+    + deleteNotification(id, auth): void
+  }
+}
+
+package "Model Layer (Data Access)" {
+  class CampaignModel {
+    + create(titleId, contents, createdBy, scheduledAt): Campaign
+    + getAll(limit, offset): Campaign[]
+    + getById(id): Campaign
+    + updateStatus(id, status): Campaign
+    + delete(id): void
+    + createNotificationContent(campaignId, localeId, data): NotificationContent
+  }
+
+  class SubscriptionModel {
+    + getByUserId(userId): WebPushSubscription[]
+    + getBySegment(segmentId): WebPushSubscription[]
+    + getByTopic(topicId): WebPushSubscription[]
+    + getAll(active): WebPushSubscription[]
+    + create(userId, subscription): WebPushSubscription
+    + delete(id): void
+  }
+
+  class NotificationLogModel {
+    + create(campaignId, subscriptionId, userId, data): NotificationLog
+    + getByUserId(userId): NotificationLog[]
+    + getByCampaignId(campaignId): NotificationLog[]
+    + getBySegment(segmentId): NotificationLog[]
+    + getByTopic(topicId): NotificationLog[]
+  }
+}
+
+package "View Layer (Response DTOs)" {
+  class PushNotificationViewMapper {
+    + mapCampaignToResponse(campaign): Object
+    + mapNotificationLogToResponse(log): Object
+    + mapSubscriptionToResponse(sub): Object
+  }
+}
+
+package "Types & Interfaces" {
+  interface AuthContext {
+    + admin_id: number
+    + admin_username: string
+    + admin_role: AdminRole
+  }
+
+  interface Campaign {
+    + id: string
+    + title_identifier: string
+    + status: CampaignStatus
+    + created_by: number
+    + created_at: Date
+    + scheduled_at?: Date
+  }
+
+  interface NotificationContent {
+    + id: string
+    + campaign_id: string
+    + locale_id: string
+    + title: string
+    + body: string
+    + icon_url?: string
+    + action_url?: string
+  }
+
+  interface WebPushSubscription {
+    + id: string
+    + user_id: string
+    + endpoint: string
+    + p256dh_key: string
+    + auth_key: string
+    + is_active: boolean
+    + created_at: Date
+    + updated_at: Date
+  }
+
+  interface NotificationLog {
+    + id: string
+    + campaign_id: string
+    + subscription_id: string
+    + user_id: string
+    + sent_by: number
+    + http_status_code: number
+    + error_message?: string
+    + created_at: Date
+  }
+
+  enum AdminRole {
+    SUPER_ADMIN
+    ADMIN
+  }
+
+  enum CampaignStatus {
+    DRAFT
+    QUEUED
+    SENDING
+    COMPLETED
+    FAILED
+  }
+}
+
+package "Database" {
+  class PrismaClient {
+    + admin: PrismaRepository
+    + notificationCampaign: PrismaRepository
+    + notificationContent: PrismaRepository
+    + webPushSubscription: PrismaRepository
+    + notificationLog: PrismaRepository
+    + locale: PrismaRepository
+    + $connect(): Promise
+    + $disconnect(): Promise
+  }
+}
+
+Elysia --> NotificationRoutes: uses
+NotificationRoutes --> AuthMiddleware: uses
+NotificationRoutes --> ValidationMiddleware: uses
+NotificationRoutes --> ErrorHandler: uses
+NotificationRoutes --> PushNotificationViewModel: delegates to
+NotificationRoutes --> Logger: logs with
+
+PushNotificationViewModel --> CampaignModel: uses
+PushNotificationViewModel --> SubscriptionModel: uses
+PushNotificationViewModel --> NotificationLogModel: uses
+PushNotificationViewModel --> AuthContext: receives
+PushNotificationViewModel --> Logger: logs with
+
+CampaignModel --> PrismaClient: queries
+SubscriptionModel --> PrismaClient: queries
+NotificationLogModel --> PrismaClient: queries
+
+PushNotificationViewModel --> PushNotificationViewMapper: formats response with
+
+AuthMiddleware --> AuthContext: returns
+ValidationMiddleware --> Campaign: validates
+ValidationMiddleware --> NotificationContent: validates
+
+@enduml

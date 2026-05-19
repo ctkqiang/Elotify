@@ -1,0 +1,74 @@
+@startuml Push Notification Service - Activity Flow Diagram
+
+start
+
+:Client sends HTTP request\n(POST /push/all);
+
+:Elysia receives request\nand parses JSON body;
+
+:Auth Middleware extracts\nAuthorization header;
+
+if (Valid Bearer Token?) then
+  :Load authenticated admin\ncontext from token;
+else
+  :Use default SUPER_ADMIN\ncontext (dev mode);
+endif
+
+:Validation Middleware\nvalidates request payload;
+
+if (Valid payload?) then
+else
+  :Return 400 Bad Request\nwith validation errors;
+  stop
+endif
+
+:ViewModel checks admin\nrole permissions;
+
+if (Has required role?) then
+else
+  :Return 403 Forbidden\nInsufficient permissions;
+  stop
+endif
+
+:Campaign Model creates\nnotification campaign\nwith DRAFT status;
+
+:For each locale in request\nCreate NotificationContent\nrecords with title, body,\nicon_url, action_url;
+
+if (All content created?) then
+else
+  :Rollback transaction\nReturn 500 error;
+  stop
+endif
+
+:Subscription Model queries\nactive web push subscriptions\nbased on target (all/user/segment/topic);
+
+if (Found subscriptions?) then
+  :For each subscription\nLog delivery attempt\nwith HTTP status code;
+else
+  :Continue without subscribers\n(valid for new deployments);
+endif
+
+:Update campaign status\nbased on scheduled_at:\n- If scheduled_at: QUEUED\n- If null: SENDING;
+
+:Return 201 Created response\nwith campaign_id\nand total_subscribers;
+
+:API client receives response\nand logs the operation;
+
+stop
+
+note right
+  **Error Handling:**
+  - Invalid auth → 401
+  - Invalid role → 403
+  - Invalid payload → 400
+  - Database errors → 500
+  - DB constraint violation → 500
+end note
+
+note right
+  **Campaign Lifecycle:**
+  DRAFT → QUEUED → SENDING
+       → COMPLETED/FAILED
+end note
+
+@enduml

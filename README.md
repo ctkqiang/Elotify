@@ -66,6 +66,176 @@ A production-grade push notification service built with **ElysiaJS**, **TypeScri
 | Extensibility | Easy to add features |
 | Error Handling | Production-ready resilience |
 
+## Architecture Diagrams
+
+### System Overview
+
+This section provides visual representations of the service architecture, data flow, and system design.
+
+#### 1. Sequence Diagram - Request Flow
+
+![Sequence Diagram](./out/docs/sequence-diagram/Push%20Notification%20Service%20-%20Sequence%20Diagram.png)
+
+**Description:**
+The sequence diagram illustrates the complete flow of a push notification request through all layers of the application:
+
+- **Client Request**: HTTP POST request arrives with notification payload
+- **Authentication Layer**: Bearer token validation and admin context extraction
+- **Validation Layer**: Request payload validation (locale contents, field lengths, formats)
+- **Business Logic (ViewModel)**: Permission checks and orchestration of models
+- **Data Access Layer (Models)**: 
+  - Campaign creation with UUID and metadata
+  - NotificationContent records for each locale
+  - Subscription lookup for target audience
+  - Delivery log entries for audit trail
+- **Database Transactions**: All operations are atomic with proper error handling
+- **Response**: Returns campaign ID, subscriber count, and timestamp
+
+**Key Points:**
+- Middleware processes requests sequentially before business logic
+- Database operations include foreign key constraints and cascading deletes
+- Comprehensive logging at each step for debugging
+- Error handling prevents partial state corruption
+
+---
+
+#### 2. Activity/Flow Diagram - Process Workflow
+
+![Flow Diagram](./out/docs/flow-diagram/Push%20Notification%20Service%20-%20Activity%20Flow%20Diagram.png)
+
+**Description:**
+The activity diagram shows the decision points and process flow of the notification delivery system:
+
+1. **Request Reception**: API receives and parses HTTP request
+2. **Authentication Decision**: Valid Bearer token branch vs default SUPER_ADMIN mode
+3. **Validation Check**: Payload validation with error responses for invalid data
+4. **Permission Verification**: Role-based access control enforcement
+5. **Campaign Creation**: Database persistence of notification campaign
+6. **Content Localization**: Creating content records for each requested locale
+7. **Subscription Lookup**: Finding target audience based on segment/topic/user
+8. **Delivery Logging**: Recording attempt status and metrics
+9. **Status Management**: Setting campaign status based on scheduled_at timestamp
+10. **Response Generation**: Returning 201 Created with campaign metadata
+
+**Error Handling Branches:**
+- Invalid payload → 400 Bad Request
+- Insufficient permissions → 403 Forbidden
+- Database constraint violation → 500 Internal Server Error
+- Missing authentication (dev mode) → Uses default context
+
+**Campaign Lifecycle:**
+- Immediate send: `DRAFT → SENDING → COMPLETED`
+- Scheduled send: `DRAFT → QUEUED → SENDING → COMPLETED`
+- Failed delivery: Any state → `FAILED` (with error message)
+
+---
+
+#### 3. Class Diagram - Architecture & Dependencies
+
+![Class Diagram](./out/docs/class-diagram/Push%20Notification%20Service%20-%20Class%20Diagram.png)
+
+**Description:**
+The class diagram represents the MVVM architecture and all components:
+
+**API Layer (Elysia):**
+- Route definitions for all 11 endpoints
+- HTTP method handlers (POST, GET, PUT, DELETE)
+- Server initialization and port binding
+
+**Middleware Layer:**
+- `AuthMiddleware`: Token extraction and validation, role enforcement
+- `ValidationMiddleware`: Input validation with field-level checks
+- `ErrorHandler`: Centralized error response formatting
+- `Logger`: Structured JSON logging with context
+
+**ViewModel Layer (Business Logic):**
+- `PushNotificationViewModel`: Orchestrates all operations
+- Methods: `pushToAll`, `pushToUser`, `pushToSegment`, `pushToTopic`
+- Query methods: `getLatestNotifications`, `getUserNotifications`, etc.
+- Management methods: `updateNotificationStatus`, `deleteNotification`
+
+**Model Layer (Data Access):**
+- `CampaignModel`: Campaign CRUD and content creation
+- `SubscriptionModel`: Subscription queries by user/segment/topic
+- `NotificationLogModel`: Audit trail persistence
+
+**View Layer (Response Formatters):**
+- `PushNotificationViewMapper`: DTO generation and response mapping
+- Transforms database entities to API response format
+
+**Type Layer:**
+- `AuthContext`: Admin authentication information
+- `Campaign`: Notification campaign with status
+- `NotificationContent`: Localized message content
+- `WebPushSubscription`: Browser subscription details
+- `NotificationLog`: Delivery attempt record
+- Enums: `AdminRole`, `CampaignStatus`, `LogStatus`, `BrowserPlatform`
+
+**Dependencies & Relationships:**
+- Routes → Middleware → ViewModel → Models → Database
+- Bidirectional logging at all layers
+- Models use Prisma ORM for database abstraction
+- Type safety across all layers via TypeScript interfaces
+
+---
+
+#### 4. Entity Relationship Diagram - Database Schema
+
+![Entity Diagram](./out/docs/entity-diagram/Push%20Notification%20Service%20-%20Entity%20Relationship%20Diagram.png)
+
+**Description:**
+The entity diagram shows the complete PostgreSQL database schema with 8 tables and their relationships:
+
+**Core Tables:**
+
+| Table | Purpose | Key Fields |
+|-------|---------|-----------|
+| `admins` | Admin user accounts | id, username, role (SUPER_ADMIN\|ADMIN) |
+| `locales` | Language/locale definitions | id (en, zh, ms, tm), name |
+| `notification_campaigns` | Campaign master records | id (UUID), title_identifier, status, created_by, scheduled_at |
+| `notification_contents` | Localized message content | id, campaign_id, locale_id, title, body, icon_url, action_url |
+| `web_push_subscriptions` | Browser push endpoints | id, user_id, endpoint, p256dh_key, auth_key, is_active |
+| `notification_logs` | Delivery audit trail | id, campaign_id, subscription_id, user_id, sent_by, http_status_code, error_message |
+| `user_segments` | User group membership | user_id, segment_id (composite key) |
+| `user_topics` | Topic subscriptions | user_id, topic_id (composite key) |
+
+**Key Relationships:**
+
+- **admins → notification_campaigns**: One admin creates many campaigns (created_by)
+- **admins → notification_logs**: One admin sends many notifications (sent_by)
+- **notification_campaigns → notification_contents**: One campaign has many localized versions
+- **notification_campaigns → notification_logs**: One campaign generates many delivery logs
+- **locales → notification_contents**: One locale appears in many campaign contents
+- **web_push_subscriptions → notification_logs**: One subscription receives many log entries
+
+**Important Constraints:**
+
+- `notification_campaigns.created_by` → Foreign key to `admins.id` (NOT NULL)
+- `notification_contents` has UNIQUE constraint on (campaign_id, locale_id)
+- `notification_logs` has ON DELETE CASCADE for campaign cleanup
+- `notification_contents` has ON DELETE CASCADE for content cleanup
+- `admins.created_by` → Self-referencing optional foreign key for admin hierarchy
+
+**Indexes for Performance:**
+
+- `notification_campaigns`: status, created_at
+- `notification_contents`: campaign_id
+- `web_push_subscriptions`: user_id, is_active, (user_id, is_active)
+- `notification_logs`: campaign_id, subscription_id, user_id, status, created_at
+- `user_segments`: segment_id
+- `user_topics`: topic_id
+
+**Design Notes:**
+
+- **Multi-locale Design**: Campaigns are locale-agnostic; content is locale-specific
+- **Audit Trail**: Every delivery logged with admin user, timestamp, and status
+- **User Identification**: Uses VARCHAR(64) for flexibility (email, UUID, custom ID)
+- **Web Push Protocol**: Stores P256DH and Auth keys for RFC 8030 compliance
+- **Soft Delete**: No soft deletes used; cascading deletes for data integrity
+- **Scalability**: Proper indexing on query paths (user_id, campaign_id, status)
+
+---
+
 ## Project Structure
 
 ### Directory Layout

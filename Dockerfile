@@ -12,4 +12,4 @@ RUN bun run prisma:generate
 
 EXPOSE 3000
 
-CMD ["bun", "run", "dev"]
+CMD ["sh", "-c", "bun run prisma db push --skip-generate && bun run dev"]

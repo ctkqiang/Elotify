@@ -1,0 +1,74 @@
+@startuml Push Notification Service - Sequence Diagram
+
+participant Client
+participant API as "API<br/>(Elysia)"
+participant Auth as "Auth<br/>Middleware"
+participant Validation as "Validation<br/>Middleware"
+participant ViewModel as "ViewModel<br/>(Business Logic)"
+participant CampaignModel as "Campaign<br/>Model"
+participant SubscriptionModel as "Subscription<br/>Model"
+participant LogModel as "Log<br/>Model"
+participant Database as "PostgreSQL<br/>Database"
+
+Client -> API: POST /push/all\n(JSON payload)
+activate API
+
+API -> Auth: extractAuthContext()
+activate Auth
+Auth -> Auth: Parse Bearer token
+Auth -> API: Return AuthContext
+deactivate Auth
+
+API -> Validation: validatePushRequest()
+activate Validation
+Validation -> Validation: Validate locale_contents\nValidate field lengths
+Validation -> API: Return validated request
+deactivate Validation
+
+API -> ViewModel: pushToAll(\ntitle_identifier,\nlocale_contents,\nauth)
+activate ViewModel
+
+ViewModel -> ViewModel: Check permissions\n(SUPER_ADMIN required)
+
+ViewModel -> CampaignModel: create(\ntitle_identifier,\ncreated_by,\nscheduled_at)
+activate CampaignModel
+CampaignModel -> Database: INSERT INTO\nnotification_campaigns
+activate Database
+Database -> CampaignModel: Return campaign_id
+deactivate Database
+deactivate CampaignModel
+
+loop For each locale in locale_contents
+    ViewModel -> CampaignModel: createNotificationContent(\ncampaign_id,\nlocale_id,\ntitle,\nbody,\nicon_url,\naction_url)
+    activate CampaignModel
+    CampaignModel -> Database: INSERT INTO\nnotification_contents
+    activate Database
+    Database -> CampaignModel: Success
+    deactivate Database
+    deactivate CampaignModel
+end
+
+ViewModel -> SubscriptionModel: getUserSubscriptions()
+activate SubscriptionModel
+SubscriptionModel -> Database: SELECT * FROM\nweb_push_subscriptions\nWHERE is_active = true
+activate Database
+Database -> SubscriptionModel: Return subscriptions
+deactivate Database
+deactivate SubscriptionModel
+
+ViewModel -> LogModel: logDelivery(\ncampaign_id,\nsubscription_id,\nuser_id,\nhttp_status,\nerror_message)
+activate LogModel
+LogModel -> Database: INSERT INTO\nnotification_logs
+activate Database
+Database -> LogModel: Success
+deactivate Database
+deactivate LogModel
+
+ViewModel -> API: Return result\n(campaign_id,\ntotal_subscribers)
+deactivate ViewModel
+
+API -> API: Set status 201
+API -> Client: Return JSON response\n{\n  "campaign_id": "uuid",\n  "total_subscribers": 1523,\n  "timestamp": "2026-05-19..."\n}
+deactivate API
+
+@enduml

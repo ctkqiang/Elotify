@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -37,6 +37,21 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+
+  adminer:
+    image: adminer:latest
+    container_name: anyan_adminer
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
 volumes:
   postgres_data:

@@ -1,0 +1,173 @@
+@startuml Push Notification Service - Entity Relationship Diagram
+
+!define COLUMN(x) <color:#4472C4><b>x</b></color>
+!define PRIMARY_KEY(x) <color:#FF6B6B><b>x</b></color>
+!define FOREIGN_KEY(x) <color:#FFA500><b>x</b></color>
+
+entity "admins" as Admins {
+  PRIMARY_KEY(id) : INT [PK, AUTO_INCREMENT]
+  name : VARCHAR(100) [NOT NULL]
+  username : VARCHAR(50) [NOT NULL, UNIQUE]
+  role : ENUM [SUPER_ADMIN | ADMIN]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+  FOREIGN_KEY(created_by) : INT [FK → admins.id, NULLABLE]
+}
+
+entity "locales" as Locales {
+  PRIMARY_KEY(id) : VARCHAR(5) [PK]
+  name : VARCHAR(50) [NOT NULL]
+}
+
+entity "notification_campaigns" as NotificationCampaigns {
+  PRIMARY_KEY(id) : UUID [PK, DEFAULT gen_random_uuid()]
+  title_identifier : VARCHAR(100) [NOT NULL]
+  status : ENUM [DRAFT | QUEUED | SENDING | COMPLETED | FAILED]
+  FOREIGN_KEY(created_by) : INT [FK → admins.id, NOT NULL]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+  scheduled_at : TIMESTAMP [NULLABLE]
+
+  Indexes:
+  - status
+  - created_at
+}
+
+entity "notification_contents" as NotificationContents {
+  PRIMARY_KEY(id) : UUID [PK, DEFAULT gen_random_uuid()]
+  FOREIGN_KEY(campaign_id) : UUID [FK → notification_campaigns.id, ON DELETE CASCADE]
+  FOREIGN_KEY(locale_id) : VARCHAR(5) [FK → locales.id, NOT NULL]
+  title : VARCHAR(120) [NOT NULL]
+  body : TEXT [NOT NULL]
+  icon_url : VARCHAR(512) [NULLABLE]
+  action_url : VARCHAR(512) [NULLABLE]
+
+  Constraints:
+  - UNIQUE(campaign_id, locale_id)
+  - Indexes: campaign_id
+}
+
+entity "web_push_subscriptions" as WebPushSubscriptions {
+  PRIMARY_KEY(id) : UUID [PK, DEFAULT gen_random_uuid()]
+  user_id : VARCHAR(64) [NOT NULL]
+  browser : ENUM [CHROME | FIREFOX | SAFARI | EDGE]
+  endpoint : TEXT [NOT NULL]
+  p256dh_key : VARCHAR(255) [NOT NULL]
+  auth_key : VARCHAR(255) [NOT NULL]
+  is_active : BOOLEAN [DEFAULT TRUE]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+  updated_at : TIMESTAMP [AUTO UPDATE]
+
+  Indexes:
+  - user_id
+  - is_active
+  - (user_id, is_active)
+}
+
+entity "notification_logs" as NotificationLogs {
+  PRIMARY_KEY(id) : UUID [PK, DEFAULT gen_random_uuid()]
+  FOREIGN_KEY(campaign_id) : UUID [FK → notification_campaigns.id, ON DELETE CASCADE]
+  FOREIGN_KEY(subscription_id) : UUID [FK → web_push_subscriptions.id]
+  user_id : VARCHAR(64) [NOT NULL]
+  FOREIGN_KEY(sent_by) : INT [FK → admins.id, NOT NULL]
+  status : ENUM [QUEUED | SENT | FAILED_EXPIRED | FAILED_ERROR]
+  http_status_code : INT [NULLABLE]
+  error_message : TEXT [NULLABLE]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+
+  Indexes:
+  - campaign_id
+  - subscription_id
+  - user_id
+  - status
+  - created_at
+}
+
+entity "user_segments" as UserSegments {
+  FOREIGN_KEY(user_id) : VARCHAR(64) [FK, COMPOSITE PK]
+  FOREIGN_KEY(segment_id) : VARCHAR(100) [COMPOSITE PK]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+
+  Indexes:
+  - segment_id
+}
+
+entity "user_topics" as UserTopics {
+  FOREIGN_KEY(user_id) : VARCHAR(64) [FK, COMPOSITE PK]
+  FOREIGN_KEY(topic_id) : VARCHAR(100) [COMPOSITE PK]
+  created_at : TIMESTAMP [DEFAULT NOW()]
+
+  Indexes:
+  - topic_id
+}
+
+Admins ||--o{ NotificationCampaigns : "creates (created_by)"
+Admins ||--o{ NotificationLogs : "sends (sent_by)"
+Admins ||--o{ Admins : "created_by"
+
+NotificationCampaigns ||--o{ NotificationContents : "has (campaign_id)"
+NotificationCampaigns ||--o{ NotificationLogs : "generates (campaign_id)"
+
+Locales ||--o{ NotificationContents : "describes (locale_id)"
+
+WebPushSubscriptions ||--o{ NotificationLogs : "receives (subscription_id)"
+
+note right of NotificationCampaigns
+  **Campaign Lifecycle:**
+  DRAFT (Initial state, editable)
+    ↓
+  QUEUED (Scheduled, waiting)
+    ↓
+  SENDING (In progress delivery)
+    ↓
+  COMPLETED (All done)
+  or FAILED (Error occurred)
+end note
+
+note right of NotificationContents
+  **Multi-locale Support:**
+  Each campaign can have content
+  in multiple locales (en, zh, ms, tm)
+
+  Ensures unique content per
+  campaign+locale combination
+end note
+
+note right of WebPushSubscriptions
+  **Browser Platform Support:**
+  CHROME, FIREFOX, SAFARI, EDGE
+
+  Web Push Protocol (RFC 8030)
+  - P256DH: Diffie-Hellman public key
+  - Auth Key: HMAC authentication
+end note
+
+note right of NotificationLogs
+  **Audit Trail:**
+  Every delivery attempt logged with:
+  - HTTP status code
+  - Error messages (if failed)
+  - Who sent it (admin)
+  - When it happened
+
+  Used for debugging and compliance
+end note
+
+note left of UserSegments
+  **User Segmentation:**
+  Maps users to segments
+  (e.g., VIP, Premium, Region)
+
+  Allows targeted campaigns
+  without foreign keys in
+  main tables
+end note
+
+note left of UserTopics
+  **Topic Subscriptions:**
+  Users can subscribe to topics
+  (e.g., Products, News, Security)
+
+  Pub-Sub model for content
+  distribution
+end note
+
+@enduml

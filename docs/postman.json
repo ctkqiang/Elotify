@@ -49,11 +49,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer admin-token-super",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -183,13 +178,7 @@
           "name": "Get User Notifications",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer admin-token-regular",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notification/user/user-123",
               "host": ["{{base_url}}"],
@@ -203,13 +192,7 @@
           "name": "Get Segment Notifications",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer admin-token-regular",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notification/group/segment-vip",
               "host": ["{{base_url}}"],
@@ -223,13 +206,7 @@
           "name": "Get Topic Notifications",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer admin-token-regular",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notification/topic/topic-products",
               "host": ["{{base_url}}"],
@@ -250,11 +227,6 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer admin-token-super",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -284,13 +256,7 @@
           "name": "Delete Notification",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer admin-token-super",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notification/550e8400-e29b-41d4-a716-446655440000",
               "host": ["{{base_url}}"],
