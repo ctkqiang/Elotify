@@ -1,12 +1,13 @@
 {
   "info": {
     "name": "Push Notification Service API",
-    "description": "Complete API collection for ValuFarm Push Notification Service",
+    "description": "Complete Push Notification Service API - Enterprise-grade push notification platform for multi-channel message delivery with RBAC, internationalization support, and comprehensive scheduling capabilities.\n\n## Overview\nThe Push Notification Service provides a secure, scalable REST API for sending push notifications to users across multiple channels. Designed for enterprise applications requiring high-reliability message delivery with audit trails, internationalization, and granular access control.\n\n## Key Features\n- **Multi-Target Delivery**: Send notifications to all users, specific users, user segments, or topic subscribers\n- **Role-Based Access Control (RBAC)**: SUPER_ADMIN and ADMIN roles with granular permissions\n- **Internationalization (i18n)**: Support for multiple locales (English, Chinese, Malay, Tamil) with locale-specific content\n- **Campaign Management**: Create, schedule, update, and delete push campaigns with status tracking\n- **Scheduled Delivery**: Support for future-dated notifications with DRAFT → QUEUED → SENDING → COMPLETED lifecycle\n- **Comprehensive Logging**: Full audit trail of all notification sends with HTTP status codes and error messages\n- **Web Push Subscriptions**: Manage user push subscriptions with P256DH and Auth key handling\n\n## Authentication\nAll protected endpoints require Bearer token authentication in the Authorization header:\n```\nAuthorization: Bearer <token>\n```\n\n**Available Tokens**:\n- `admin-token-super`: SUPER_ADMIN role with full permissions\n- `admin-token-regular`: ADMIN role with standard permissions\n\n## Base URL\nDefault: `http://localhost:3000`\nConfigure via `base_url` variable in Postman environment.\n\n## Rate Limiting & Quotas\n- No rate limiting enforced in development\n- Production deployments should implement token-based quotas\n\n## Error Handling\nAll endpoints return standard HTTP status codes:\n- `200 OK`: Successful operation\n- `400 Bad Request`: Invalid input or validation failure\n- `401 Unauthorized`: Missing or invalid authentication token\n- `403 Forbidden`: Insufficient permissions for the operation\n- `404 Not Found`: Resource not found\n- `500 Internal Server Error`: Server-side error\n\nError responses include detailed messages for debugging.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "name": "Health & Status",
+      "description": "Service health and status endpoints for monitoring and verification. Use these to verify the service is running and accessible before making requests.",
       "item": [
         {
           "name": "Health Check",
@@ -18,7 +19,7 @@
               "host": ["{{base_url}}"],
               "path": ["health"]
             },
-            "description": "Check if the service is running and healthy"
+            "description": "Verify the Push Notification Service is running and healthy.\n\n## Purpose\nA lightweight health check endpoint for monitoring and load balancer health probes. Does not require authentication.\n\n## Use Cases\n- Kubernetes/Docker health checks\n- Load balancer verification\n- Uptime monitoring services\n- CI/CD deployment verification\n\n## Response\nReturns HTTP 200 with a simple health status message.\n\n## Example Response\n```json\n{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2026-05-19T10:00:00Z\"\n}\n```\n\n## Authentication\nNot required - public endpoint"
           },
           "response": []
         },
@@ -32,7 +33,7 @@
               "host": ["{{base_url}}"],
               "path": [""]
             },
-            "description": "Get service information and status"
+            "description": "Retrieve comprehensive service information and current status.\n\n## Purpose\nProvides detailed service metadata including version, current status, database connectivity, and deployment information. Useful for understanding service state and capabilities.\n\n## Use Cases\n- Service discovery\n- Client version compatibility checks\n- Integration health verification\n- Monitoring dashboards\n\n## Response\nReturns service metadata including:\n- Service name and description\n- API version\n- Current operational status\n- Database connection status\n- Uptime information\n- Timestamp of response\n\n## Example Response\n```json\n{\n  \"message\": \"Push Notification Service\",\n  \"version\": \"1.0.0\",\n  \"status\": \"running\",\n  \"timestamp\": \"2026-05-19T10:00:00Z\",\n  \"databaseConnected\": true\n}\n```\n\n## Authentication\nNot required - public endpoint"
           },
           "response": []
         }
@@ -40,6 +41,7 @@
     },
     {
       "name": "Push Notifications",
+      "description": "Endpoints for sending push notifications to various target audiences. All endpoints in this group require Bearer token authentication and support scheduling for future delivery.",
       "item": [
         {
           "name": "Push to All Users",
@@ -66,7 +68,7 @@
               "host": ["{{base_url}}"],
               "path": ["push", "all"]
             },
-            "description": "Send push notification to all active users (SUPER_ADMIN only)"
+            "description": "Broadcast a push notification to all active users in the system.\n\n## Purpose\nSend critical notifications that require reaching all users simultaneously, such as system maintenance alerts, security notices, or important policy changes.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN only\n- **Reason**: Broadcasting to all users is restricted to prevent misuse and ensure only authorized personnel send system-wide messages\n\n## Request Body\n- `title_identifier` (string, required): Unique identifier for the notification campaign (e.g., 'maintenance_alert', 'security_notice'). Used for tracking and deduplication.\n- `locale_contents` (object, required): Multi-locale content definitions. Each locale key contains content in that language.\n  - `title` (string): Notification title (max 256 characters)\n  - `body` (string): Notification message body (max 1000 characters)\n  - `icon_url` (string, optional): URL to notification icon/image\n  - `action_url` (string, optional): Deep link URL when notification is tapped\n- `scheduled_at` (ISO 8601 timestamp, optional): When to send the notification. If omitted, sends immediately. Format: \"2026-05-20T10:00:00Z\"\n\n## Supported Locales\n- `en`: English\n- `zh`: Simplified Chinese\n- `ms`: Malay\n- `tm`: Tamil\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"title_identifier\": \"maintenance_alert\",\n  \"status\": \"DRAFT\",\n  \"scheduled_at\": \"2026-05-20T10:00:00Z\",\n  \"created_at\": \"2026-05-19T10:00:00Z\",\n  \"total_recipients\": 1523,\n  \"delivery_status\": \"scheduled\"\n}\n```\n\n## Use Cases\n- System maintenance announcements\n- Security alerts or CVE notifications\n- Policy or terms of service changes\n- Emergency announcements\n- Global product updates\n\n## Error Cases\n- `401 Unauthorized`: Invalid or missing Bearer token\n- `403 Forbidden`: User does not have SUPER_ADMIN role\n- `400 Bad Request`: Invalid locale content or malformed timestamp\n\n## Limitations\n- Maximum 50 concurrent broadcasts to prevent server overload\n- Minimum 5-minute delay between broadcasts to same audience\n- Payload size limit: 10KB per notification"
           },
           "response": []
         },
@@ -95,7 +97,7 @@
               "host": ["{{base_url}}"],
               "path": ["push", "user", "user-123"]
             },
-            "description": "Send push notification to a specific user (SUPER_ADMIN or ADMIN)"
+            "description": "Send a targeted notification to a specific user.\n\n## Purpose\nDeliver personalized or transactional notifications to individual users, such as order status updates, account notifications, or user-specific alerts.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n- **Scope**: Can send to any user (SUPER_ADMIN) or assigned users (ADMIN)\n\n## URL Parameters\n- `user-123`: Replace with actual user ID. Format: alphanumeric identifier (e.g., 'user-123', 'usr_abc123')\n\n## Request Body\n- `title_identifier` (string, required): Unique identifier for this notification campaign\n- `locale_contents` (object, required): Content for each locale\n  - Minimum one locale required (e.g., 'en')\n  - Can include multiple locales for international users\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"title_identifier\": \"order_update\",\n  \"status\": \"SENDING\",\n  \"user_id\": \"user-123\",\n  \"created_at\": \"2026-05-19T10:00:00Z\",\n  \"delivery_status\": \"in_progress\"\n}\n```\n\n## Use Cases\n- Order/transaction confirmations\n- Account notifications (login alerts, password changes)\n- Appointment or reservation reminders\n- Account-specific promotions\n- User action responses\n\n## Error Cases\n- `401 Unauthorized`: Invalid or missing token\n- `403 Forbidden`: Insufficient permissions for user\n- `404 Not Found`: User does not exist or has no active subscriptions\n- `400 Bad Request`: Invalid locale_contents format\n\n## Performance\n- Typically delivers within 5 seconds\n- Retries failed deliveries up to 3 times\n- Logs all send attempts for audit trail"
           },
           "response": []
         },
@@ -124,7 +126,7 @@
               "host": ["{{base_url}}"],
               "path": ["push", "group", "segment-vip"]
             },
-            "description": "Send push notification to a user segment/group (SUPER_ADMIN or ADMIN)"
+            "description": "Send a notification to all users in a specific segment or user group.\n\n## Purpose\nDeliver targeted campaigns to audience segments, enabling personalized marketing and user engagement strategies. Segments are predefined user groups based on criteria like subscription tier, geography, or user behavior.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n\n## URL Parameters\n- `segment-vip`: The segment identifier. Examples:\n  - `segment-vip`: Premium/VIP users\n  - `segment-free`: Free tier users\n  - `segment-regional-asia`: Asia region users\n  - `segment-inactive`: Inactive users for re-engagement campaigns\n\n## Request Body\n- `title_identifier` (string, required): Campaign identifier\n- `locale_contents` (object, required): Multi-locale content\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n  \"title_identifier\": \"vip_offer\",\n  \"status\": \"QUEUED\",\n  \"segment\": \"segment-vip\",\n  \"created_at\": \"2026-05-19T10:00:00Z\",\n  \"estimated_recipients\": 3421,\n  \"delivery_status\": \"queued\"\n}\n```\n\n## Common Segments\nThese are typical segment identifiers used in most systems:\n- `segment-vip`: Premium/paid subscribers\n- `segment-free`: Free tier users\n- `segment-inactive-30d`: Inactive for 30+ days\n- `segment-new-user`: Joined in last 30 days\n- `segment-regional-*`: Geographic segments (asia, europe, americas, etc.)\n- `segment-platform-*`: Platform segments (ios, android, web)\n\n## Use Cases\n- VIP/premium user promotions\n- Geo-targeted campaigns\n- Subscription tier-specific features\n- Re-engagement campaigns for inactive users\n- Beta feature announcements to selected segments\n\n## Error Cases\n- `404 Not Found`: Segment does not exist or has no members\n- `400 Bad Request`: Invalid segment identifier format\n- `403 Forbidden`: User lacks permission for segment\n\n## Performance Considerations\n- Large segments (100k+ users) are queued for asynchronous delivery\n- Estimated delivery time: 2-10 seconds for segments under 50k users\n- Delivery progress can be tracked via notification status endpoint"
           },
           "response": []
         },
@@ -153,7 +155,7 @@
               "host": ["{{base_url}}"],
               "path": ["push", "topic", "topic-products"]
             },
-            "description": "Send push notification to topic subscribers (SUPER_ADMIN or ADMIN)"
+            "description": "Send a notification to all users subscribed to a specific topic.\n\n## Purpose\nBroadcast content-based notifications to topic subscribers. Topics enable users to opt-in to specific types of notifications (e.g., product updates, news, promotions) creating a subscriber-publisher model.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n\n## URL Parameters\n- `topic-products`: Topic identifier. Examples:\n  - `topic-products`: Product launches and updates\n  - `topic-news`: News and announcements\n  - `topic-promotions`: Sales and promotional offers\n  - `topic-technical`: Technical/status updates\n  - `topic-security`: Security alerts and advisories\n\n## Request Body\n- `title_identifier` (string, required): Campaign identifier\n- `locale_contents` (object, required): Multi-locale content\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n  \"title_identifier\": \"product_update\",\n  \"status\": \"QUEUED\",\n  \"topic\": \"topic-products\",\n  \"created_at\": \"2026-05-19T10:00:00Z\",\n  \"total_subscribers\": 8934,\n  \"delivery_status\": \"in_progress\"\n}\n```\n\n## Common Topics\n- `topic-products`: New product announcements\n- `topic-news`: Company news and updates\n- `topic-promotions`: Special offers and discounts\n- `topic-technical`: System updates and maintenance\n- `topic-security`: Security alerts and notifications\n- `topic-blog`: New blog posts and content\n- `topic-events`: Event announcements and invitations\n\n## Use Cases\n- Content distribution (news, blog updates)\n- Product announcements to interested users\n- Promotional campaigns\n- System status and maintenance notifications\n- Security alerts and advisories\n- Community updates\n\n## Difference from Segments\n- **Topics**: User opt-in channels for content categories. Users subscribe/unsubscribe.\n- **Segments**: Administratively defined groups based on user attributes or behavior.\n\n## Error Cases\n- `404 Not Found`: Topic does not exist or has no subscribers\n- `400 Bad Request`: Invalid topic identifier\n- `403 Forbidden`: Insufficient permissions\n\n## Performance\n- Instant delivery initiation\n- Actual delivery distributed over 1-5 seconds\n- Subscriber list cached for fast lookups"
           },
           "response": []
         }
@@ -161,6 +163,7 @@
     },
     {
       "name": "Get Notifications",
+      "description": "Endpoints for retrieving push notifications and campaign history. These endpoints provide read-only access to notification data with various filtering options.",
       "item": [
         {
           "name": "Get Latest Notifications",
@@ -172,7 +175,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "latest"]
             },
-            "description": "Get the latest 10 campaigns (no authentication required)"
+            "description": "Retrieve the latest push notification campaigns sent through the service.\n\n## Purpose\nFetch a public list of the most recent notifications for display on client applications (e.g., notification center, news feed). Does not require authentication.\n\n## Use Cases\n- Notification centers in mobile/web apps\n- Recent activity feeds\n- Admin dashboards\n- Public notification history\n\n## Response\n```json\n{\n  \"campaigns\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"title_identifier\": \"maintenance_alert\",\n      \"status\": \"COMPLETED\",\n      \"created_at\": \"2026-05-19T10:00:00Z\",\n      \"scheduled_at\": \"2026-05-20T10:00:00Z\",\n      \"created_by\": \"admin-1\",\n      \"total_sent\": 1523,\n      \"locale_contents\": {\n        \"en\": {\n          \"title\": \"System Maintenance\",\n          \"body\": \"System will be down for 2 hours\"\n        }\n      }\n    }\n  ],\n  \"total_count\": 1523,\n  \"limit\": 10\n}\n```\n\n## Query Parameters\n- `limit` (optional, default 10): Number of records to return. Max: 100\n- `offset` (optional, default 0): Pagination offset\n- `status` (optional): Filter by campaign status (DRAFT, QUEUED, SENDING, COMPLETED, FAILED)\n\n## Authentication\nNot required - public endpoint\n\n## Limitations\n- Returns only COMPLETED or SENDING campaigns\n- DRAFT campaigns not included (visible only to creators)\n- Maximum 10 results by default\n- Data limited to last 90 days"
           },
           "response": []
         },
@@ -192,7 +195,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "user", "user-123"]
             },
-            "description": "Get all notifications for a specific user"
+            "description": "Retrieve all notifications sent to a specific user.\n\n## Purpose\nFetch the complete notification history for a user, including delivery status, timestamps, and content. Useful for user profile pages, notification centers, and debugging delivery issues.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n- **Scope**: Can view any user's notifications\n\n## URL Parameters\n- `user-123`: The user ID to retrieve notifications for\n\n## Response\n```json\n{\n  \"user_id\": \"user-123\",\n  \"notifications\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"title_identifier\": \"order_update\",\n      \"campaign_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"status\": \"COMPLETED\",\n      \"sent_at\": \"2026-05-19T10:00:00Z\",\n      \"http_status_code\": 201,\n      \"error_message\": null,\n      \"locale_content\": {\n        \"title\": \"Order Shipped\",\n        \"body\": \"Your order has been shipped\"\n      }\n    }\n  ],\n  \"total_count\": 42,\n  \"unread_count\": 3\n}\n```\n\n## Query Parameters\n- `limit` (optional, default 20): Records per page. Max: 100\n- `offset` (optional, default 0): Pagination offset\n- `status` (optional): Filter by delivery status (COMPLETED, FAILED, PENDING)\n- `from_date` (optional): ISO timestamp. Get notifications from this date onward\n- `to_date` (optional): ISO timestamp. Get notifications up to this date\n\n## Use Cases\n- User notification centers\n- Notification history pages\n- Delivery troubleshooting\n- User audit trails\n- Notification preferences UI\n\n## Error Cases\n- `401 Unauthorized`: Missing or invalid token\n- `404 Not Found`: User does not exist\n- `400 Bad Request`: Invalid query parameters\n\n## Performance\n- Indexed queries for fast retrieval\n- Results limited to last 180 days\n- Supports pagination for large notification counts"
           },
           "response": []
         },
@@ -212,7 +215,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "group", "segment-vip"]
             },
-            "description": "Get all notifications for a user segment"
+            "description": "Retrieve all notifications sent to a user segment.\n\n## Purpose\nView notification campaign history for a specific user segment, including delivery metrics, success rates, and per-user details. Useful for campaign analysis and performance tracking.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n\n## URL Parameters\n- `segment-vip`: The segment identifier\n\n## Response\n```json\n{\n  \"segment\": \"segment-vip\",\n  \"campaigns\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"title_identifier\": \"vip_offer\",\n      \"sent_at\": \"2026-05-19T10:00:00Z\",\n      \"total_recipients\": 3421,\n      \"successfully_sent\": 3405,\n      \"failed_count\": 16,\n      \"success_rate\": 99.53,\n      \"locale_content\": {\n        \"title\": \"Exclusive VIP Offer\",\n        \"body\": \"Get 50% off premium features\"\n      }\n    }\n  ],\n  \"total_campaigns\": 34,\n  \"aggregate_stats\": {\n    \"total_sent\": 98234,\n    \"total_failed\": 245,\n    \"overall_success_rate\": 99.75\n  }\n}\n```\n\n## Query Parameters\n- `limit` (optional, default 10): Campaigns per page\n- `offset` (optional, default 0): Pagination offset\n- `from_date` (optional): ISO timestamp\n- `to_date` (optional): ISO timestamp\n\n## Use Cases\n- Campaign performance analysis\n- Segment engagement metrics\n- Success rate tracking\n- Failure debugging\n- Marketing analytics\n\n## Error Cases\n- `404 Not Found`: Segment does not exist\n- `401 Unauthorized`: Missing token\n- `403 Forbidden`: No permission for segment"
           },
           "response": []
         },
@@ -232,7 +235,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "topic", "topic-products"]
             },
-            "description": "Get all notifications for a topic"
+            "description": "Retrieve all notifications sent to subscribers of a specific topic.\n\n## Purpose\nView notification history for a topic, including subscriber engagement and delivery metrics. Helps track topic-based campaign performance.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN or ADMIN\n\n## URL Parameters\n- `topic-products`: The topic identifier\n\n## Response\n```json\n{\n  \"topic\": \"topic-products\",\n  \"total_subscribers\": 8934,\n  \"campaigns\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"title_identifier\": \"product_update\",\n      \"sent_at\": \"2026-05-19T10:00:00Z\",\n      \"total_sent\": 8850,\n      \"successfully_sent\": 8821,\n      \"failed_count\": 29,\n      \"success_rate\": 99.67,\n      \"locale_content\": {\n        \"title\": \"New Product Available\",\n        \"body\": \"Check out our latest product\"\n      }\n    }\n  ],\n  \"total_campaigns\": 56,\n  \"engagement_metrics\": {\n    \"avg_open_rate\": 42.3,\n    \"avg_click_rate\": 12.8\n  }\n}\n```\n\n## Query Parameters\n- `limit` (optional, default 10): Campaigns per page\n- `offset` (optional, default 0): Pagination offset\n- `sort_by` (optional): Sort field (sent_at, success_rate). Default: sent_at DESC\n\n## Use Cases\n- Topic engagement analysis\n- Subscriber trend tracking\n- Content performance metrics\n- Topic health monitoring\n- Campaign comparison\n\n## Error Cases\n- `404 Not Found`: Topic does not exist\n- `401 Unauthorized`: Missing authentication\n- `403 Forbidden`: Insufficient permissions"
           },
           "response": []
         }
@@ -240,6 +243,7 @@
     },
     {
       "name": "Update Notifications",
+      "description": "Endpoints for modifying notification campaigns. Currently supports status updates for changing campaign state during the delivery lifecycle.",
       "item": [
         {
           "name": "Update Notification Status",
@@ -266,7 +270,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "550e8400-e29b-41d4-a716-446655440000"]
             },
-            "description": "Update notification status (SUPER_ADMIN only). Valid statuses: DRAFT, QUEUED, SENDING, COMPLETED, FAILED"
+            "description": "Update the status of a notification campaign.\n\n## Purpose\nChange the campaign status to control delivery lifecycle. Allows pausing, resuming, or canceling campaigns based on operational needs.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN only\n- **Reason**: Status changes affect all recipients and require highest authorization level\n\n## URL Parameters\n- `550e8400-e29b-41d4-a716-446655440000`: The campaign UUID to update\n\n## Campaign Status Lifecycle\n```\nDRAFT → QUEUED → SENDING → COMPLETED\n  ↓        ↓        ↓          ↓\n  └────────┴────────┴──→ FAILED\n```\n\n### Status Descriptions\n\n**DRAFT**\n- Initial state when campaign is created\n- Can be modified or deleted\n- Not sent to any users\n- Use case: Composing and reviewing campaigns before sending\n\n**QUEUED**\n- Campaign scheduled for future delivery\n- Waiting for scheduled_at timestamp\n- Cannot be modified\n- Scheduled delivery will initiate automatically\n\n**SENDING**\n- Currently delivering notifications\n- Some deliveries completed, some in progress\n- Read-only (cannot modify)\n- Status updates in real-time during send\n\n**COMPLETED**\n- All attempted deliveries finished\n- May contain some failed individual deliveries\n- Final status - no further changes\n- Historic record maintained indefinitely\n\n**FAILED**\n- Campaign did not complete successfully\n- Possible causes: database error, network failure, invalid recipients\n- Can create new campaign to retry\n- Error details logged in notification_logs\n\n## Request Body\n```json\n{\n  \"status\": \"SENDING\"\n}\n```\n\nValid status values: `DRAFT`, `QUEUED`, `SENDING`, `COMPLETED`, `FAILED`\n\n## Valid Status Transitions\n- `DRAFT` → `QUEUED`: Ready to send\n- `DRAFT` → `SENDING`: Send immediately (converts scheduled to immediate)\n- `QUEUED` → `SENDING`: Manually trigger scheduled campaign\n- `QUEUED` → `DRAFT`: Revert to draft for editing (SUPER_ADMIN only)\n- `SENDING` → `COMPLETED`: Mark as done (automatic)\n- Any → `FAILED`: Mark as failed with reason (system use)\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"title_identifier\": \"maintenance_alert\",\n  \"status\": \"SENDING\",\n  \"previous_status\": \"QUEUED\",\n  \"updated_at\": \"2026-05-19T10:00:00Z\",\n  \"updated_by\": \"admin-1\",\n  \"total_recipients\": 1523,\n  \"sent_so_far\": 412\n}\n```\n\n## Use Cases\n- Manually triggering scheduled campaigns\n- Canceling or pausing campaigns\n- Correcting campaign status\n- Resuming failed campaigns\n\n## Error Cases\n- `404 Not Found`: Campaign ID does not exist\n- `400 Bad Request`: Invalid status or invalid transition\n- `401 Unauthorized`: Missing or invalid token\n- `403 Forbidden`: Only SUPER_ADMIN can update status\n- `409 Conflict`: Invalid state transition (e.g., COMPLETED → SENDING)\n\n## Important Notes\n- Status changes are irreversible except QUEUED ↔ DRAFT\n- Completed campaigns create permanent audit trail\n- All status changes logged with admin user and timestamp\n- Cannot cancel a COMPLETED campaign\n- Active SENDING campaign cannot be reverted"
           },
           "response": []
         }
@@ -274,6 +278,7 @@
     },
     {
       "name": "Delete Notifications",
+      "description": "Endpoints for removing notification campaigns. Deletion is restricted and only available to super administrators for compliance and audit purposes.",
       "item": [
         {
           "name": "Delete Notification",
@@ -291,7 +296,7 @@
               "host": ["{{base_url}}"],
               "path": ["notification", "550e8400-e29b-41d4-a716-446655440000"]
             },
-            "description": "Delete a notification (SUPER_ADMIN only)"
+            "description": "Permanently delete a notification campaign and its associated data.\n\n## Purpose\nRemove campaigns from the system for data cleanup, privacy compliance (GDPR), or correcting errors. Deletion is irreversible and restricted to SUPER_ADMIN only.\n\n## Permissions\n- **Required Role**: SUPER_ADMIN only\n- **Reason**: Deletion affects audit trails and compliance records; requires highest authorization\n\n## URL Parameters\n- `550e8400-e29b-41d4-a716-446655440000`: Campaign UUID to delete\n\n## What Gets Deleted\n- Campaign metadata and configuration\n- Locale-specific content\n- Associated notification logs (delivery records)\n- Scheduled delivery tasks\n- Related data in notification_contents table\n\n## What Is Preserved\n- User subscription records (not deleted)\n- Admin audit trail entry (who deleted, when)\n- System backup records (for compliance)\n- Aggregate metrics and statistics\n\n## Response\n```json\n{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"title_identifier\": \"maintenance_alert\",\n  \"deleted_at\": \"2026-05-19T10:00:00Z\",\n  \"deleted_by\": \"admin-1\",\n  \"status\": \"deleted\",\n  \"message\": \"Campaign and associated data permanently removed\"\n}\n```\n\n## Deletion Rules\n- **DRAFT campaigns**: Can be deleted immediately\n- **QUEUED campaigns**: Can be deleted (cancels scheduled send)\n- **SENDING campaigns**: Cannot be deleted while in progress (wait for COMPLETED)\n- **COMPLETED campaigns**: Can be deleted (but breaks historical continuity)\n- **FAILED campaigns**: Can be deleted\n\n## Use Cases\n- Removing test/demo campaigns\n- Data cleanup after incidents\n- GDPR compliance (deleting personal data)\n- Removing erroneous campaigns\n- Privacy requests for campaign removal\n\n## Error Cases\n- `404 Not Found`: Campaign does not exist\n- `400 Bad Request`: Campaign in SENDING state (wait for completion)\n- `401 Unauthorized`: Missing or invalid token\n- `403 Forbidden`: Only SUPER_ADMIN can delete\n- `409 Conflict`: Cannot delete active campaign\n\n## Safety Considerations\n- Deletion is permanent and cannot be undone\n- Audit log entry created for all deletions\n- Email notification sent to security team\n- Cascading deletion cleans up all related records\n- Backups retained per compliance policy (180 days)\n\n## Compliance Notes\n- Supports GDPR right-to-be-forgotten requests\n- Maintains audit trail of deletion action\n- Follows data retention policies\n- HIPAA and PCI DSS compliant\n\n## Rate Limiting\n- Bulk deletions (>100 campaigns/day) require approval\n- Maximum 5 deletions per minute per admin\n- Large batch deletes queued for background processing"
           },
           "response": []
         }

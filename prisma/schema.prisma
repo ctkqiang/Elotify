@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  QUEUED
+  SENDING
+  COMPLETED
+  FAILED
+}
+
+enum LogStatus {
+  QUEUED
+  SENT
+  FAILED_EXPIRED
+  FAILED_ERROR
+}
+
+enum BrowserPlatform {
+  CHROME
+  FIREFOX
+  SAFARI
+  EDGE
+}
+
+model Admin {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  username  String    @unique @db.VarChar(50)
+  role      AdminRole
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy Int?      @map("created_by")
+  creator   Admin?    @relation("AdminCreates", fields: [createdBy], references: [id])
+  created   Admin[]   @relation("AdminCreates")
+  campaigns NotificationCampaign[]
+  logs      NotificationLog[]
+
+  @@map("admins")
+}
+
+model Locale {
+  id                  String                @id @db.VarChar(5)
+  name                String                @db.VarChar(50)
+  notificationContent NotificationContent[]
+
+  @@map("locales")
+}
+
+model WebPushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.VarChar(64)
+  browser   BrowserPlatform
+  endpoint  String   @db.Text
+  p256dhKey String   @map("p256dh_key") @db.VarChar(255)
+  authKey   String   @map("auth_key") @db.VarChar(255)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  logs      NotificationLog[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([userId, isActive])
+  @@map("web_push_subscriptions")
+}
+
+model NotificationCampaign {
+  id                String                @id @default(uuid()) @db.Uuid
+  titleIdentifier   String                @map("title_identifier") @db.VarChar(100)
+  status            CampaignStatus        @default(DRAFT)
+  createdBy         Int                   @map("created_by")
+  creator           Admin                 @relation(fields: [createdBy], references: [id])
+  createdAt         DateTime              @default(now()) @map("created_at")
+  scheduledAt       DateTime?             @map("scheduled_at")
+  contents          NotificationContent[]
+  logs              NotificationLog[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("notification_campaigns")
+}
+
+model NotificationContent {
+  id         String                @id @default(uuid()) @db.Uuid
+  campaignId String                @map("campaign_id") @db.Uuid
+  campaign   NotificationCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  localeId   String                @map("locale_id") @db.VarChar(5)
+  locale     Locale                @relation(fields: [localeId], references: [id])
+  title      String                @db.VarChar(120)
+  body       String                @db.Text
+  iconUrl    String?               @map("icon_url") @db.VarChar(512)
+  actionUrl  String?               @map("action_url") @db.VarChar(512)
+
+  @@unique([campaignId, localeId])
+  @@index([campaignId])
+  @@map("notification_contents")
+}
+
+model NotificationLog {
+  id             String              @id @default(uuid()) @db.Uuid
+  campaignId     String              @map("campaign_id") @db.Uuid
+  campaign       NotificationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriptionId String              @map("subscription_id") @db.Uuid
+  subscription   WebPushSubscription @relation(fields: [subscriptionId], references: [id])
+  userId         String              @map("user_id") @db.VarChar(64)
+  sentBy         Int                 @map("sent_by")
+  sender         Admin               @relation(fields: [sentBy], references: [id])
+  status         LogStatus
+  httpStatusCode Int?                @map("http_status_code")
+  errorMessage   String?             @map("error_message") @db.Text
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  @@index([campaignId])
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+model UserSegment {
+  userId    String   @map("user_id") @db.VarChar(64)
+  segmentId String   @map("segment_id") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, segmentId])
+  @@index([segmentId])
+  @@map("user_segments")
+}
+
+model UserTopic {
+  userId    String   @map("user_id") @db.VarChar(64)
+  topicId   String   @map("topic_id") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, topicId])
+  @@index([topicId])
+  @@map("user_topics")
+}
