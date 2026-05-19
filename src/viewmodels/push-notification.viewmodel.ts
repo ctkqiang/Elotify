@@ -7,7 +7,8 @@ import {
   WebPushSubscription,
   NotificationLog,
   LogStatus,
-  AuthContext
+  AuthContext,
+  AdminRole
 } from '../types';
 
 export class PushNotificationViewModel {
@@ -23,8 +24,8 @@ export class PushNotificationViewModel {
     auth: AuthContext,
     scheduledAt?: Date
   ): Promise<Campaign> {
-    if (auth.admin_role !== 'SUPER_ADMIN') {
-      throw new Error('Unauthorized: Only SUPER_ADMIN can create campaigns');
+    if (auth.admin_role !== AdminRole.SUPER_ADMIN && auth.admin_role !== AdminRole.ADMIN) {
+      throw new Error('Unauthorized: Only SUPER_ADMIN or ADMIN can create campaigns');
     }
 
     return this.campaignModel.create(titleIdentifier, auth.admin_id, scheduledAt);
@@ -195,7 +196,7 @@ export class PushNotificationViewModel {
     status: CampaignStatus,
     auth: AuthContext
   ): Promise<Campaign> {
-    if (auth.admin_role !== 'SUPER_ADMIN') {
+    if (auth.admin_role !== AdminRole.SUPER_ADMIN) {
       throw new Error('Unauthorized: Only SUPER_ADMIN can update notifications');
     }
 
@@ -213,7 +214,7 @@ export class PushNotificationViewModel {
     updates: Partial<Campaign>,
     auth: AuthContext
   ): Promise<Campaign> {
-    if (auth.admin_role !== 'SUPER_ADMIN') {
+    if (auth.admin_role !== AdminRole.SUPER_ADMIN) {
       throw new Error('Unauthorized: Only SUPER_ADMIN can update notifications');
     }
 
@@ -235,7 +236,7 @@ export class PushNotificationViewModel {
   }
 
   async deleteNotification(notificationId: string, auth: AuthContext): Promise<void> {
-    if (auth.admin_role !== 'SUPER_ADMIN') {
+    if (auth.admin_role !== AdminRole.SUPER_ADMIN) {
       throw new Error('Unauthorized: Only SUPER_ADMIN can delete notifications');
     }
 

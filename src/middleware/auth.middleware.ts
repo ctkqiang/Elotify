@@ -2,8 +2,8 @@ import { Context } from 'elysia';
 import { AuthContext, AdminRole } from '../types';
 
 const VALID_TOKENS = new Map<string, AuthContext>([
-  ['admin-token-super', { admin_id: 1, admin_username: 'admin', admin_role: AdminRole.SUPER_ADMIN }],
-  ['admin-token-regular', { admin_id: 2, admin_username: 'user', admin_role: AdminRole.ADMIN }]
+  ['admin-token-super', { admin_id: 0, admin_username: 'admin', admin_role: AdminRole.SUPER_ADMIN }],
+  ['admin-token-regular', { admin_id: 0, admin_username: 'user', admin_role: AdminRole.ADMIN }]
 ]);
 
 export class AuthMiddleware {

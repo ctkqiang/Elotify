@@ -198,14 +198,14 @@ export interface NotificationLog {
  * for the current request. Populated from JWT or bearer token.
  *
  * @interface AuthContext
- * @property {number} adminId - Authenticated admin user ID
- * @property {string} adminUsername - Admin username
- * @property {AdminRole} adminRole - User role for RBAC
+ * @property {number} admin_id - Authenticated admin user ID
+ * @property {string} admin_username - Admin username
+ * @property {AdminRole} admin_role - User role for RBAC
  */
 export interface AuthContext {
-  adminId: number;
-  adminUsername: string;
-  adminRole: AdminRole;
+  admin_id: number;
+  admin_username: string;
+  admin_role: AdminRole;
 }
 
 /**

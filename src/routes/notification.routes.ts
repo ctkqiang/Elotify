@@ -32,6 +32,7 @@ export const PostPushNotifications = {
   pushToUser: '/push/user/:user_id',
   pushToSegment: '/push/group/:segment_id',
   pushToTopic: '/push/topic/:topic_id',
+  createSubscription: '/admin/subscriptions',
 };
 
 export const GetPushNotifications = {
@@ -256,6 +257,78 @@ export function setupNotificationRoutes(app: Elysia) {
       };
     } catch (error) {
       logger.error('Error in push/topic endpoint', error as Error, 'PUSH_TOPIC', { requestId });
+      set.status = 500;
+      return {
+        error: 'Error',
+        message: (error as Error).message || 'Internal server error',
+        status_code: 500,
+        timestamp: new Date().toISOString()
+      };
+    } finally {
+      logger.endRequest();
+    }
+  });
+
+  /**
+   * POST /admin/subscriptions
+   * Create a test web push subscription for a user
+   */
+  app.post(PostPushNotifications.createSubscription, async ({ body, set, request }) => {
+    const requestId = crypto.randomUUID();
+    logger.startRequest(requestId);
+
+    try {
+      logger.info('Create subscription request received', 'CREATE_SUB', { requestId });
+
+      const auth = AuthMiddleware.extractAuthContext({
+        request: { headers: request.headers }
+      } as any);
+
+      if (auth.admin_role !== AdminRole.ADMIN && auth.admin_role !== AdminRole.SUPER_ADMIN) {
+        set.status = 403;
+        return {
+          error: 'Forbidden',
+          message: 'Only ADMIN role can create subscriptions',
+          status_code: 403
+        };
+      }
+
+      const { user_id, browser, endpoint, p256dh_key, auth_key } = body as any;
+
+      if (!user_id || !browser || !endpoint || !p256dh_key || !auth_key) {
+        set.status = 400;
+        return {
+          error: 'Bad Request',
+          message: 'Missing required fields: user_id, browser, endpoint, p256dh_key, auth_key',
+          status_code: 400
+        };
+      }
+
+      const subscription = await subscriptionModel.create(
+        user_id,
+        browser,
+        endpoint,
+        p256dh_key,
+        auth_key
+      );
+
+      set.status = 201;
+      logger.logOperation('CREATE_SUB', subscription.id, 'SUCCESS', 0, {
+        userId: user_id,
+        browser
+      });
+
+      return {
+        id: subscription.id,
+        user_id: subscription.userId,
+        browser: subscription.browser,
+        endpoint: subscription.endpoint,
+        is_active: subscription.isActive,
+        created_at: subscription.createdAt,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.error('Error creating subscription', error as Error, 'CREATE_SUB', { requestId });
       set.status = 500;
       return {
         error: 'Error',
@@ -526,7 +599,7 @@ export function setupNotificationRoutes(app: Elysia) {
   });
 
   logger.info('Notification routes setup complete', 'ROUTES_SETUP', {
-    totalEndpoints: 11
+    totalEndpoints: 12
   });
 
   return app;
