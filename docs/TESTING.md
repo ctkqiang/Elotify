@@ -13,7 +13,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   -d '{
     "user_id": "user-123",
     "browser": "CHROME",
-    "endpoint": "https://fcm.googleapis.com/fcm/send/example-123",
+    "endpoint": "https://push.example.com/endpoint/sub-123",
     "p256dh_key": "test-public-key-base64",
     "auth_key": "test-auth-secret-base64"
   }'
@@ -25,7 +25,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   "id": "550e8400-e29b-41d4-a716-446655440010",
   "user_id": "user-123",
   "browser": "CHROME",
-  "endpoint": "https://fcm.googleapis.com/fcm/send/example-123",
+  "endpoint": "https://push.example.com/endpoint/sub-123",
   "is_active": true,
   "created_at": "2026-05-19T10:00:00.000Z",
   "timestamp": "2026-05-19T10:00:00.000Z"
@@ -109,7 +109,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   -d '{
     "user_id": "user-alice",
     "browser": "FIREFOX",
-    "endpoint": "https://endpoint1.com",
+    "endpoint": "https://push.example.com/endpoint/alice-001",
     "p256dh_key": "key1",
     "auth_key": "auth1"
   }'
@@ -121,7 +121,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   -d '{
     "user_id": "user-bob",
     "browser": "CHROME",
-    "endpoint": "https://endpoint2.com",
+    "endpoint": "https://push.example.com/endpoint/bob-001",
     "p256dh_key": "key2",
     "auth_key": "auth2"
   }'
@@ -153,7 +153,7 @@ INSERT INTO web_push_subscriptions (
   gen_random_uuid(),
   'user-123',
   'CHROME',
-  'https://fcm.googleapis.com/fcm/send/example',
+  'https://push.example.com/endpoint/example',
   'test-key',
   'test-auth',
   true,

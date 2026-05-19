@@ -46,7 +46,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   -d '{
     "user_id": "user-123",
     "browser": "CHROME",
-    "endpoint": "https://fcm.googleapis.com/fcm/send/example-endpoint",
+    "endpoint": "https://push.example.com/endpoint/user-123",
     "p256dh_key": "base64-encoded-public-key",
     "auth_key": "base64-encoded-auth-secret"
   }'
@@ -86,7 +86,7 @@ curl -X POST http://localhost:3000/admin/subscriptions \
   -d '{
     "user_id": "user-123",
     "browser": "CHROME",
-    "endpoint": "https://fcm.googleapis.com/fcm/send/test123",
+    "endpoint": "https://push.example.com/endpoint/abc123",
     "p256dh_key": "test-key",
     "auth_key": "test-auth"
   }'
